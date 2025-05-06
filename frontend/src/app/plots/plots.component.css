@@ -1,0 +1,14 @@
+.dashboard-wrapper {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+}
+
+.section-caption {
+    font-size: 20px;
+    font-weight: 600;
+    color: #000;
+    text-align: center;
+    margin-bottom: 16px;
+}

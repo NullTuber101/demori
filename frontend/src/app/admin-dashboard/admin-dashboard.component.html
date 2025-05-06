@@ -1,0 +1,46 @@
+<div class="dashboard-container">
+    <!-- Pending Requests -->
+    <div class="column">
+        <h3>Pending Requests</h3>
+        <mat-card *ngFor="let req of pendingRequests()" class="request-card">
+            <div class="info-row"><span class="label">Name:</span> <span class="value">{{ req.name }}</span></div>
+            <div class="info-row"><span class="label">BRID:</span> <span class="value">{{ req.brid }}</span></div>
+            <div class="info-row"><span class="label">Email:</span> <span class="value">{{ req.email }}</span></div>
+
+            <div class="actions">
+                <button mat-stroked-button color="primary" (click)="approve(req.id, 'EDITOR')">Approve</button>
+                <button mat-stroked-button color="warn" (click)="reject(req.id)">Reject</button>
+            </div>
+        </mat-card>
+    </div>
+
+    <!-- Approved Users -->
+    <div class="column">
+        <h3>Approved Users</h3>
+        <mat-card *ngFor="let user of approvedUsers(); let i = index" class="user-card">
+            <div class="info-row"><span class="label">Name:</span> <span class="value">{{ user.name }}</span></div>
+            <div class="info-row"><span class="label">Current Role:</span> <span class="value">{{ user.role.roleName
+                    }}</span></div>
+
+            <div *ngIf="user.editing; else viewRole" class="role-select">
+                <mat-form-field class="full-width" appearance="outline">
+                    <mat-label>Change Role</mat-label>
+                    <mat-select [(value)]="user.pendingRole" (selectionChange)="updatePendingRole(i, $event.value)">
+                        <mat-option *ngFor="let role of availableRoles" [value]="role">{{ role }}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <ng-template #viewRole>
+                <p><em>Click "Edit" to modify role</em></p>
+            </ng-template>
+
+            <div class="actions">
+                <button mat-stroked-button color="accent" *ngIf="!user.editing" (click)="enableEdit(i)">Edit</button>
+                <button mat-stroked-button color="primary" *ngIf="user.editing"
+                    (click)="submitRoleUpdate(i)">Submit</button>
+                <button mat-stroked-button color="warn" (click)="downgradeToViewer(user.id)">Remove</button>
+            </div>
+        </mat-card>
+    </div>
+</div>

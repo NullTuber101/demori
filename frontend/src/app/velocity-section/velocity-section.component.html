@@ -1,0 +1,160 @@
+<div class="container">
+    <!-- Scrum Area Section -->
+    <div class="left">
+        <h3>Scrum Area Section</h3>
+        <mat-card>
+            <mat-card-title>Add / Edit Scrum Area</mat-card-title>
+            <form [formGroup]="scrumAreaForm" (ngSubmit)="saveScrumArea()">
+                <mat-card-content>
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Area Name</mat-label>
+                        <input matInput formControlName="areaName" autocomplete="off" />
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Scrum Master</mat-label>
+                        <input matInput formControlName="scrumMaster" autocomplete="off" />
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Scrum Team</mat-label>
+                        <input matInput formControlName="scrumTeam" autocomplete="off" />
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Board ID</mat-label>
+                        <input matInput formControlName="boardId" autocomplete="off" />
+                    </mat-form-field>
+                </mat-card-content>
+
+                <mat-card-actions align="end">
+                    <button mat-raised-button color="primary" type="submit"
+                        [disabled]="!isLoggedIn || userRole === 'VIEWER'">
+                        {{ editingScrumAreaId ? 'Update' : 'Add' }}
+                    </button>
+                </mat-card-actions>
+            </form>
+        </mat-card>
+
+        <hr />
+        <h3>List of Scrum Area:</h3>
+
+        <div class="card-grid">
+            <mat-card *ngFor="let a of scrumAreas" class="list-card">
+                <mat-card-title>{{ a.areaName }}</mat-card-title>
+                <mat-card-content>
+                    <div class="info-row">
+                        <span class="label">Scrum Master:</span>
+                        <span class="value">{{ a.scrumMaster }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Scrum Team:</span>
+                        <span class="value">{{ a.scrumTeam }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Board ID:</span>
+                        <span class="value">{{ a.boardId }}</span>
+                    </div>
+                </mat-card-content>
+                <mat-card-actions align="end">
+                    <span class="card-actions">
+                        <button mat-icon-button color="primary" (click)="editScrumArea(a)"
+                            [disabled]="!isLoggedIn || userRole === 'VIEWER'">
+                            <mat-icon>edit</mat-icon>
+                        </button>
+                        <button mat-icon-button color="warn" (click)="deleteScrumArea(a.id)"
+                            [disabled]="!isLoggedIn || userRole === 'VIEWER'">
+                            <mat-icon>delete</mat-icon>
+                        </button>
+                    </span>
+                </mat-card-actions>
+            </mat-card>
+        </div>
+    </div>
+
+    <!-- Velocity Section -->
+    <div class="right">
+        <h3>Velocity Details Section</h3>
+        <mat-card>
+            <mat-card-title>Add / Edit Velocity</mat-card-title>
+            <form [formGroup]="velocityForm" (ngSubmit)="saveVelocity()">
+                <mat-card-content>
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Select Scrum Area</mat-label>
+                        <mat-select formControlName="scrumAreaId">
+                            <mat-option *ngFor="let area of scrumAreas" [value]="area.id">{{ area.areaName
+                                }}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Sprint Name</mat-label>
+                        <input matInput formControlName="sprintName" autocomplete="off" />
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Velocity</mat-label>
+                        <input matInput type="number" formControlName="velocity" />
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Sprint End Date</mat-label>
+                        <input matInput [matDatepicker]="picker" formControlName="sprintEndDate" />
+                        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                        <mat-datepicker #picker></mat-datepicker>
+                    </mat-form-field>
+                </mat-card-content>
+
+                <mat-card-actions align="end">
+                    <button mat-raised-button color="accent" type="submit"
+                        [disabled]="!isLoggedIn || userRole === 'VIEWER'">
+                        {{ editingVelocityId ? 'Update Velocity' : 'Add Velocity' }}
+                    </button>
+                </mat-card-actions>
+            </form>
+        </mat-card>
+
+        <hr />
+        <h3>List of Sprint and Velocity:</h3>
+
+        <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Filter by Scrum Area</mat-label>
+            <mat-select [(ngModel)]="selectedScrumAreaId">
+                <mat-option [value]="null">-- All Areas --</mat-option>
+                <mat-option *ngFor="let area of scrumAreas" [value]="area.id">{{ area.areaName }}</mat-option>
+            </mat-select>
+        </mat-form-field>
+
+        <div class="card-grid">
+            <mat-card *ngFor="let v of filteredVelocities" class="list-card">
+                <mat-card-title>{{ v.sprintName }}</mat-card-title>
+                <mat-card-content>
+                    <div class="info-row">
+                        <span class="label">Scrum Area:</span>
+                        <span class="value">{{ v.scrumArea.areaName }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Velocity:</span>
+                        <span class="value">{{ v.velocity }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">End Date:</span>
+                        <span class="value">{{ v.sprintEndDate | date }}</span>
+                    </div>
+                </mat-card-content>
+                <mat-card-actions align="end">
+                    <span class="card-actions">
+                        <button mat-icon-button color="primary" (click)="editVelocity(v)"
+                            [disabled]="!isLoggedIn || userRole === 'VIEWER'">
+                            <mat-icon>edit</mat-icon>
+                        </button>
+                        <button mat-icon-button color="warn" (click)="deleteVelocity(v.id)"
+                            [disabled]="!isLoggedIn || userRole === 'VIEWER'">
+                            <mat-icon>delete</mat-icon>
+                        </button>
+                    </span>
+                </mat-card-actions>
+            </mat-card>
+        </div>
+    </div>
+</div>

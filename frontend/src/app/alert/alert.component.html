@@ -1,0 +1,13 @@
+<div class="alert-container">
+    <div class="alert-icon">
+        <mat-icon color="warn">error</mat-icon>
+    </div>
+
+    <div class="alert-title">{{ data.title }}</div>
+
+    <div class="alert-message">{{ data.message }}</div>
+
+    <div class="alert-actions">
+        <button mat-raised-button color="primary" (click)="close()">OK</button>
+    </div>
+</div>

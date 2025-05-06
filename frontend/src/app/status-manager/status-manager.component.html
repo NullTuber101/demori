@@ -1,0 +1,71 @@
+<!-- Add Status Form -->
+<form [formGroup]="statusForm" (ngSubmit)="addStatus()" class="form-container">
+    <mat-card>
+        <mat-card-title>Add New Status</mat-card-title>
+        <mat-card-content>
+            <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Status Name</mat-label>
+                <input matInput formControlName="statusName" placeholder="Enter status name" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Percentage</mat-label>
+                <input matInput type="number" formControlName="percentage" min="0" max="100"
+                    placeholder="Enter percentage" />
+            </mat-form-field>
+        </mat-card-content>
+
+        <mat-card-actions>
+            <button mat-raised-button color="primary" type="submit"
+                [disabled]="statusForm.invalid || !isLoggedIn || userRole === 'VIEWER'">Submit</button>
+        </mat-card-actions>
+    </mat-card>
+</form>
+
+<hr />
+
+<h3>List of statuses:</h3>
+
+<div class="status-cards">
+    <mat-card class="status-card" *ngFor="let status of statuses; let i = index">
+        <div *ngIf="editIndex !== i" class="status-view">
+            <div class="status-info">
+                <div><strong>Status Name:</strong> {{ status.statusName }}</div>
+                <div><strong>Percentage:</strong> {{ status.percentage }}%</div>
+            </div>
+
+            <div class="status-actions">
+                <button mat-icon-button color="primary" (click)="enableEdit(i)"
+                    [disabled]="!isLoggedIn || userRole === 'VIEWER'">
+                    <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="confirmDelete(i)"
+                    [disabled]="!isLoggedIn || userRole === 'VIEWER'">
+                    <mat-icon>delete</mat-icon>
+                </button>
+            </div>
+        </div>
+    </mat-card>
+</div>
+
+<!-- Edit Form -->
+<div *ngIf="editIndex !== null" class="editSection">
+    <form [formGroup]="editForm" (ngSubmit)="saveEdit(editIndex)" class="edit-form">
+        <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Status Name</mat-label>
+            <input matInput formControlName="statusName" placeholder="Edit status name" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Percentage</mat-label>
+            <input matInput type="number" formControlName="percentage" min="0" max="100"
+                placeholder="Edit percentage" />
+        </mat-form-field>
+
+        <div class="edit-buttons">
+            <button mat-raised-button color="primary" type="submit"
+                [disabled]="editForm.invalid || !isLoggedIn || userRole === 'VIEWER'">Save</button>
+            <button mat-stroked-button type="button" (click)="cancelEdit()">Cancel</button>
+        </div>
+    </form>
+</div>

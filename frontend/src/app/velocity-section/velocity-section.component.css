@@ -1,0 +1,209 @@
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    padding: 20px;
+    align-items: flex-start;
+}
+
+.left,
+.right {
+    flex: 1;
+    min-width: 360px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    word-break: break-word;
+}
+
+.left {
+    padding-right: 20px;
+}
+
+.right {
+    padding-left: 20px;
+}
+
+mat-card {
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 14px;
+    word-break: break-word;
+}
+
+mat-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a237e;
+    margin-bottom: 10px;
+    word-break: break-word;
+}
+
+mat-card-content {
+    font-size: 12.5px;
+    color: #333;
+    word-break: break-word;
+}
+
+mat-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+mat-form-field input,
+mat-form-field textarea {
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+h3 {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 600;
+    position: relative;
+    margin: 0;
+    word-break: break-word;
+}
+
+/* 📦 Listing container */
+.card-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+    max-height: 360px;
+    overflow-y: auto;
+    padding: 16px;
+    border: 1px solid #e4e4e7;
+    border-radius: 10px;
+    background-color: #f9fafb;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(150, 150, 150, 0.3) transparent;
+}
+
+/* Scrollbar */
+.card-grid::-webkit-scrollbar {
+    width: 7px;
+}
+
+.card-grid::-webkit-scrollbar-thumb {
+    background-color: rgba(150, 150, 150, 0.3);
+    border-radius: 10px;
+}
+
+.card-grid:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 100, 100, 0.5);
+}
+
+/* 🧾 Cards */
+.list-card {
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    padding: 14px;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    word-break: break-word;
+}
+
+.list-card:hover {
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+
+.card-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.full-width {
+    width: 100%;
+    margin-bottom: 14px;
+}
+
+button[mat-raised-button] {
+    font-size: 12px;
+    padding: 5px 12px;
+}
+
+button[mat-icon-button]:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+    border-radius: 50%;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 13px;
+    color: #4b5563;
+    word-break: break-word;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.label {
+    font-weight: 500;
+    color: #6b7280;
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.value {
+    font-weight: 400;
+    color: #111827;
+    text-align: right;
+    max-width: 50%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Subtle scroll icon */
+.scroll-hint-icon {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    font-size: 18px;
+    color: rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+}
+
+/* 📱 Responsive */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .left {
+        padding-right: 0;
+        border-bottom: 1px solid #e0e0e0;
+        padding-bottom: 20px;
+    }
+
+    .right {
+        padding-left: 0;
+    }
+
+    .card-grid {
+        grid-template-columns: 1fr;
+        max-height: unset;
+    }
+
+    .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .label,
+    .value {
+        max-width: 100%;
+        white-space: normal;
+        text-align: left;
+    }
+}

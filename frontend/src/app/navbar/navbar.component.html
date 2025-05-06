@@ -1,0 +1,9 @@
+<mat-toolbar color="primary">
+    <button mat-button routerLink="/">Home</button>
+    <button mat-button routerLink="/area-manager">Area Manager</button>
+    <button mat-button routerLink="/status-manager">Status Manager</button>
+    <button mat-button routerLink="/project-add">Project Add</button>
+    <button mat-button routerLink="/scrum-section">Scrum Section</button>
+    <button mat-button routerLink="/plot-section">Plot Section</button>
+    <button mat-button routerLink="/admin" *ngIf="isSuperUser">Admin</button>
+</mat-toolbar>

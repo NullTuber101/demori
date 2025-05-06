@@ -1,0 +1,14 @@
+/* Your existing styles */
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: Roboto, "Helvetica Neue", sans-serif;
+
+    /* Just add these two lines */
+    letter-spacing: 0.25px;
+    line-height: 1.6;
+}

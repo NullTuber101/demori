@@ -1,0 +1,200 @@
+:host {
+    display: block;
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    font-family: 'Inter', 'Roboto', 'Segoe UI', sans-serif;
+    background-color: #fafafa;
+    word-break: break-word;
+}
+
+.form-container {
+    margin-bottom: 32px;
+}
+
+mat-card {
+    background: #ffffff;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.05);
+    border-radius: 14px;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    word-break: break-word;
+}
+
+mat-card:hover {
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+mat-card-title {
+    padding: 24px 24px 0;
+    font-size: 22px;
+    font-weight: 600;
+    color: #1a1a1a;
+    word-break: break-word;
+}
+
+mat-card-content {
+    padding: 24px;
+    word-break: break-word;
+}
+
+.full-width {
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+mat-form-field input,
+mat-form-field textarea {
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+mat-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 16px 24px 24px;
+    flex-wrap: wrap;
+}
+
+h3 {
+    margin-left: 8px;
+    font-size: 22px;
+    color: #111;
+    font-weight: 600;
+    margin-bottom: 16px;
+    word-break: break-word;
+}
+
+/* Status Cards Section */
+.status-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.status-card {
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.04);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    transform: scale(1);
+    cursor: pointer;
+    word-break: break-word;
+}
+
+.status-card:hover {
+    transform: scale(1.015);
+    box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.status-view {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.status-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 16px;
+    color: #333;
+    line-height: 1.6;
+    letter-spacing: 0.25px;
+    word-break: break-word;
+}
+
+.status-info div {
+    font-weight: 400;
+    word-break: break-word;
+}
+
+.status-info div strong {
+    font-weight: 500;
+    font-size: 14px;
+    color: #666;
+    margin-right: 4px;
+    letter-spacing: 0.5px;
+    word-break: break-word;
+}
+
+.status-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+button[mat-icon-button] {
+    width: 36px;
+    height: 36px;
+    background-color: #f6f6f6;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+button[mat-icon-button]:hover {
+    background-color: #eeeeee;
+}
+
+mat-icon {
+    font-size: 20px;
+    color: rgba(0, 0, 0, 0.65);
+}
+
+button[color="warn"] mat-icon {
+    color: #e53935;
+}
+
+.editSection {
+    width: 95%;
+    margin-top: 20px;
+    padding: 24px;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.05);
+    word-break: break-word;
+}
+
+.edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    word-break: break-word;
+}
+
+.edit-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+hr {
+    margin: 40px 0;
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #ddd, transparent);
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+    .status-view {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .status-actions {
+        align-self: flex-end;
+        margin-top: 12px;
+    }
+
+    .edit-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

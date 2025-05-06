@@ -1,0 +1,37 @@
+::ng-deep .mat-dialog-container {
+    max-width: 90vw;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    padding: 24px;
+}
+
+h2[mat-dialog-title] {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+    word-break: break-word;
+}
+
+mat-dialog-content {
+    font-size: 15px;
+    color: #444;
+    max-height: 300px;
+    /* restrict height for long content */
+    overflow-y: auto;
+    word-break: break-word;
+    padding-right: 4px;
+}
+
+mat-dialog-actions {
+    padding-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+button[mat-button] {
+    min-width: 80px;
+    font-weight: 500;
+}

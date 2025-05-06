@@ -1,0 +1,35 @@
+.alert-container {
+    width: 300px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    padding: 24px 16px;
+    text-align: center;
+}
+
+.alert-icon mat-icon {
+    font-family: 'Material Icons';
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    line-height: 48px;
+    display: inline-block;
+    vertical-align: middle;
+    color: red;
+}
+
+.alert-title {
+    font-size: 20px;
+    font-weight: bold;
+    margin: 16px 0 8px 0;
+}
+
+.alert-message {
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+.alert-actions {
+    display: flex;
+    justify-content: center;
+}

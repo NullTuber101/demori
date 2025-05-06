@@ -1,0 +1,87 @@
+.page-container {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 64px);
+    /* Adjust if your toolbar height differs */
+}
+
+.loading-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.lead-info {
+    display: flex;
+    gap: 40px;
+    margin: 16px 0;
+    font-size: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+    word-break: break-word;
+}
+
+.lead-info div {
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.error-message {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: red;
+    font-size: 18px;
+}
+
+/* Table wrapper for scrollability */
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 16px;
+}
+
+/* Fixed layout table for consistent column widths */
+table.mat-table {
+    width: 1200px;
+    /* Adjust based on your design */
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+/* Header and cell style for truncating long text */
+table.mat-table th,
+table.mat-table td {
+    padding: 12px 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+    vertical-align: middle;
+    border-bottom: 1px solid #e0e0e0;
+    font-size: 14px;
+}
+
+/* Optional: prevent action buttons from overflowing awkwardly */
+.center-cell {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.center-header {
+    text-align: left;
+}
+
+/* Utility class to truncate long text in table cells */
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+}

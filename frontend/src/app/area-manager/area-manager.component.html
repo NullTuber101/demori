@@ -1,0 +1,81 @@
+<!-- Add Area Form -->
+<form [formGroup]="areaForm" (ngSubmit)="addArea()" class="form-container">
+  <mat-card>
+    <mat-card-title>Add New Area</mat-card-title>
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Area Name</mat-label>
+        <input matInput formControlName="name" placeholder="Enter Area Name" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Lead Name</mat-label>
+        <input matInput formControlName="leadName" placeholder="Enter Lead Name" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Lead Email</mat-label>
+        <input matInput type="email" formControlName="leadEmail" placeholder="Enter Lead Email" />
+      </mat-form-field>
+    </mat-card-content>
+
+    <mat-card-actions *ngIf="isLoggedIn && userRole !== 'VIEWER'">
+      <button mat-raised-button color="primary" type="submit">Submit</button>
+    </mat-card-actions>
+  </mat-card>
+</form>
+
+<hr />
+
+<h3>List of Areas</h3>
+
+<div class="area-cards">
+  <mat-card class="area-card" *ngFor="let area of areas; let i = index">
+    <div *ngIf="editIndex !== i" class="area-view">
+      <div class="area-info">
+        <div matTooltip="{{ area.name }}"><strong>Area Name:</strong> {{ area.name }}</div>
+        <div matTooltip="{{ area.leadName }}"><strong>Lead Name:</strong> {{ area.leadName }}</div>
+        <div matTooltip="{{ area.leadEmail }}"><strong>Lead Email:</strong> {{ area.leadEmail }}</div>
+      </div>
+
+      <div class="area-actions" *ngIf="isLoggedIn && userRole !== 'VIEWER'">
+        <button mat-icon-button color="primary" (click)="enableEdit(i)">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" (click)="confirmDelete(i)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </div>
+  </mat-card>
+</div>
+
+<!-- Edit Area Form -->
+<div *ngIf="editIndex !== null" class="editSection">
+  <form [formGroup]="editForm" (ngSubmit)="saveEdit(editIndex)" class="edit-form">
+    <mat-card>
+      <mat-card-title>Edit Area</mat-card-title>
+      <mat-card-content>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Area Name</mat-label>
+          <input matInput formControlName="name" placeholder="Edit Area Name" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Lead Name</mat-label>
+          <input matInput formControlName="leadName" placeholder="Edit Lead Name" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Lead Email</mat-label>
+          <input matInput type="email" formControlName="leadEmail" placeholder="Edit Lead Email" />
+        </mat-form-field>
+      </mat-card-content>
+
+      <mat-card-actions align="end" *ngIf="isLoggedIn && userRole !== 'VIEWER'">
+        <button mat-raised-button color="primary" type="submit">Save</button>
+        <button mat-stroked-button type="button" (click)="cancelEdit()">Cancel</button>
+      </mat-card-actions>
+    </mat-card>
+  </form>
+</div>

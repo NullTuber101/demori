@@ -1,0 +1,96 @@
+.chart-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Center the main chart heading */
+.chart-heading {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 24px;
+    font-weight: 500;
+    color: #333;
+}
+
+.carousel-container {
+    width: 100%;
+}
+
+.carousel-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.area-counter {
+    margin: 0 15px;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.chart-card {
+    width: 100%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding-right: 10px;
+    /* Add extra padding to right side */
+}
+
+/* Center the card header and title */
+.centered-header {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 16px;
+}
+
+.mat-card-header .mat-card-title {
+    margin-bottom: 0;
+    text-align: center;
+    width: 100%;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+mat-card-content {
+    display: flex;
+    flex-direction: column;
+    padding: 0 16px 16px;
+    /* Add some horizontal padding */
+}
+
+.chart-wrapper {
+    position: relative;
+    width: calc(100% - 10px);
+    /* Slightly reduce width to add margin */
+    margin: 0 auto;
+    /* Center the chart */
+    overflow: hidden;
+    /* Hide overflow content */
+    border-radius: 4px;
+}
+
+.no-projects-message,
+.loading-message {
+    text-align: center;
+    padding: 20px;
+    font-size: 16px;
+    color: #666;
+}
+
+/* Ensure the card can grow to accommodate the chart */
+.mat-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.mat-card-content {
+    flex-grow: 1;
+}
+
+/* Make sure canvas takes full width of its container */
+canvas {
+    width: 100% !important;
+}

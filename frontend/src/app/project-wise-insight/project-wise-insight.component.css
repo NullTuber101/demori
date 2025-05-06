@@ -1,0 +1,133 @@
+.project-title {
+    text-align: center;
+    margin-bottom: 24px;
+    font-weight: 600;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    margin-top: 32px;
+    align-items: flex-start;
+    padding: 0 24px;
+}
+
+.left-form,
+.right-list {
+    flex: 1;
+    min-width: 360px;
+}
+
+/* Form and Card Common */
+.form-container {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.full-width {
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+mat-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    padding: 24px;
+    word-break: break-word;
+}
+
+mat-card-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #1a237e;
+    word-break: break-word;
+}
+
+mat-card-content {
+    margin-top: 12px;
+    font-size: 15px;
+    color: #333;
+    word-break: break-word;
+}
+
+mat-card-content p {
+    margin: 6px 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+mat-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+}
+
+/* Sprint Cards */
+.sprint-card {
+    margin-bottom: 24px;
+}
+
+.sprint-card mat-card {
+    background: #fafafa;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    transition: transform 0.2s ease;
+}
+
+.sprint-card mat-card:hover {
+    transform: scale(1.015);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.edit-form {
+    margin-top: 8px;
+    word-break: break-word;
+}
+
+mat-form-field textarea,
+mat-form-field input {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+button[mat-raised-button],
+button[mat-stroked-button],
+button[mat-icon-button] {
+    font-size: 13px;
+}
+
+/* Hover for small buttons */
+button[mat-icon-button]:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+    border-radius: 50%;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .left-form,
+    .right-list {
+        width: 100%;
+    }
+
+    mat-card-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
