@@ -1,7 +1,7 @@
-package com.fdp.datareport.validation.validators;
+package com.fdp.datareport.validations;
 
 import com.fdp.datareport.validation.annotations.ValidDateRange;
-import jakarta.validation.ConstraintValidatorContext;
+import com.fdp.datareport.validation.validators.DateRangeValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

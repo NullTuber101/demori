@@ -14,8 +14,7 @@ public class JwtUtil {
     private static final String SECRET = "fdpdatareportforfdpdatareportfor12";
     private final SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes());
 
-    private final long EXPIRATION = 1000 * 60 * 60; // 1 hour
-
+    private final long EXPIRATION = 1000 * 60 * 25; // 25 minutes
     public String generateToken(String brid, String role) {
         return Jwts.builder()
                 .setSubject(brid)

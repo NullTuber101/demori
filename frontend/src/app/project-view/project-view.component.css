@@ -4,12 +4,33 @@
     min-height: calc(100vh - 64px);
     /* Adjust if your toolbar height differs */
 }
+.lead-info {
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 24px;
+    font-size: 14px;
+    margin: 16px 0;
+    word-break: break-word;
+}
+
 
 .loading-container {
     flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.error-message {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: red;
+    font-size: 18px;
 }
 
 .lead-info {
@@ -27,15 +48,6 @@
     overflow-wrap: break-word;
 }
 
-.error-message {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: red;
-    font-size: 18px;
-}
-
 /* Table wrapper for scrollability */
 .table-container {
     width: 100%;
@@ -45,43 +57,138 @@
 
 /* Fixed layout table for consistent column widths */
 table.mat-table {
-    width: 1200px;
-    /* Adjust based on your design */
+    width: 100%;
+    /* Changed from fixed 1200px to responsive */
+    min-width: 1200px;
+    /* Ensure minimum width for horizontal scroll */
     table-layout: fixed;
-    border-collapse: collapse;
+    border-collapse: separate;
+    /* Changed from collapse for better border control */
+    border-spacing: 0;
 }
 
-/* Header and cell style for truncating long text */
+/* Header and cell style */
 table.mat-table th,
 table.mat-table td {
     padding: 12px 16px;
-    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     word-break: break-word;
     vertical-align: middle;
     border-bottom: 1px solid #e0e0e0;
     font-size: 14px;
+    white-space: normal;
+    /* Allow text to wrap */
+    line-height: 1.4;
 }
 
-/* Optional: prevent action buttons from overflowing awkwardly */
+/* Give each column a specific width */
+table.mat-table th:nth-child(1),
+table.mat-table td:nth-child(1) {
+    width: 15%;
+    /* Project Name */
+}
+
+table.mat-table th:nth-child(2),
+table.mat-table td:nth-child(2) {
+    width: 20%;
+    /* Description */
+}
+
+table.mat-table th:nth-child(3),
+table.mat-table td:nth-child(3) {
+    width: 15%;
+    /* Developer/POC */
+}
+
+table.mat-table th:nth-child(4),
+table.mat-table td:nth-child(4) {
+    width: 10%;
+    /* JIRA */
+}
+
+table.mat-table th:nth-child(5),
+table.mat-table td:nth-child(5) {
+    width: 10%;
+    /* Start Date */
+}
+
+table.mat-table th:nth-child(6),
+table.mat-table td:nth-child(6) {
+    width: 10%;
+    /* End Date */
+}
+
+table.mat-table th:nth-child(7),
+table.mat-table td:nth-child(7) {
+    width: 10%;
+    /* Status */
+}
+
+/* Align action column content */
+.center-header {
+    text-align: center;
+}
+
+/* Fix alignment for the action column */
 .center-cell {
     display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: flex-start;
+    justify-content: center;
     align-items: center;
+    gap: 8px;
+    /* Reduced gap */
     white-space: nowrap;
+    min-width: 210px;
+    /* Ensure space for buttons */
+    padding: 8px 4px;
+    /* Reduce padding */
 }
 
-.center-header {
-    text-align: left;
+/* Action column styling */
+table.mat-table th:nth-child(8),
+table.mat-table td:nth-child(8) {
+    width: 210px;
+    text-align: center;
 }
 
-/* Utility class to truncate long text in table cells */
+/* Style the action buttons */
+.center-cell button,
+.center-cell a {
+    min-width: 64px;
+    /* Smaller minimum width */
+    padding: 0 8px;
+    /* Reduced padding */
+    line-height: 32px;
+    /* Shorter height */
+    font-size: 13px;
+    /* Smaller font */
+}
+
+/* Optional: Truncate any overly long cell content */
 .truncate {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 200px;
+}
+
+/* Fix for Material table row alignment */
+.mat-row,
+.mat-header-row {
+    display: table-row;
+    min-height: 48px;
+    height: auto;
+}
+
+/* Fix for cell alignment within rows */
+.mat-cell,
+.mat-header-cell {
+    display: table-cell;
+    box-sizing: border-box;
+}
+
+/* Ensure consistent styling for mat-paginator */
+mat-paginator {
+    margin-top: 16px;
+    width: 100%;
 }
