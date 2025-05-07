@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AreaService } from '../services/area.service';
 import { ProjectService } from '../services/project.service';
 import { StatusService } from '../services/status.service';
 import { Project } from '../models/project.model';
 import { Status } from '../models/status.model';
+import { Area } from '../models/area.model';
 import { AreaWithProjects } from '../models/area-with-projects.model';
 
 import { Chart, ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
@@ -14,8 +15,8 @@ import { BaseChartDirective } from 'ng2-charts';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { forkJoin } from 'rxjs';
 
-// Register chart.js plugins
 Chart.register(...registerables, ChartDataLabels);
 
 @Component({
@@ -33,6 +34,9 @@ Chart.register(...registerables, ChartDataLabels);
   ]
 })
 export class AreaWiseProjectChartComponent implements OnInit {
+  @Output() loaded = new EventEmitter<void>();
+  @Output() error = new EventEmitter<string>();
+
   areas: AreaWithProjects[] = [];
   projects: Project[] = [];
   statuses: Status[] = [];
@@ -46,83 +50,45 @@ export class AreaWiseProjectChartComponent implements OnInit {
     maintainAspectRatio: false,
     indexAxis: 'y',
     scales: {
-      x: {
-        beginAtZero: true,
-        max: 100,
-        ticks: {
-          padding: 5
-        }
-      },
+      x: { beginAtZero: true, max: 100, ticks: { padding: 5 } },
       y: {
         beginAtZero: true,
-        ticks: {
-          autoSkip: false,
-          font: {
-            size: 12
-          }
-        },
-        title: {
-          display: true,
-          text: 'Projects'
-        }
+        ticks: { autoSkip: false, font: { size: 12 } },
+        title: { display: true, text: 'Projects' }
       }
     },
-    layout: {
-      padding: {
-        right: 75
-      }
-    },
+    layout: { padding: { right: 75 } },
     plugins: {
       datalabels: {
         anchor: 'end',
         align: (context) => {
           const value = context.dataset.data[context.dataIndex] as number;
-          return value >= 95 ? 'start' : 'right'; // ✅ Smart label flip for wide bars
+          return value >= 95 ? 'start' : 'right';
         },
         clamp: true,
-        clip: false, // ✅ Prevent label from being cut off
+        clip: false,
         formatter: (_value, context) => {
-          if (
-            this.areas.length === 0 ||
-            this.currentAreaIndex >= this.areas.length ||
-            !this.areas[this.currentAreaIndex].projects ||
-            context.dataIndex >= this.areas[this.currentAreaIndex].projects.length
-          ) {
-            return '';
-          }
-
+          if (!this.hasProjects()) return '';
           const project = this.areas[this.currentAreaIndex].projects[context.dataIndex];
-          return project && project.status ? project.status.statusName : '';
+          return project?.status?.statusName || '';
         },
         color: (context) => {
           const value = context.dataset.data[context.dataIndex] as number;
           return value > 75 ? 'white' : 'black';
         },
-        font: {
-          weight: 'bold',
-          size: 12
-        },
+        font: { weight: 'bold', size: 12 },
         backgroundColor: (context) => {
           const value = context.dataset.data[context.dataIndex] as number;
           return value > 75 ? 'rgba(0,0,0,0.5)' : null;
         },
         borderRadius: 2,
-        padding: {
-          top: 2,
-          bottom: 2,
-          left: 4,
-          right: 4
-        }
+        padding: { top: 2, bottom: 2, left: 4, right: 4 }
       },
       legend: { display: false },
       tooltip: {
         enabled: true,
-        titleFont: {
-          size: 14
-        },
-        bodyFont: {
-          size: 13
-        }
+        titleFont: { size: 14 },
+        bodyFont: { size: 13 }
       }
     },
     datasets: {
@@ -142,41 +108,38 @@ export class AreaWiseProjectChartComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.areaService.getAreas().subscribe((areas) => {
-      this.areas = areas as AreaWithProjects[];
-      if (this.areas.length > 0) {
-        this.currentAreaIndex = 0;
+    forkJoin({
+      areas: this.areaService.getAreas(),
+      projects: this.projectService.getAllProjects(),
+      statuses: this.statusService.getStatuses()
+    }).subscribe({
+      next: ({ areas, projects, statuses }) => {
+        this.areas = (areas as Area[]).map(area => ({ ...area, projects: [] }));
+        this.projects = projects;
+        this.statuses = statuses;
+
+        if (this.areas.length > 0) this.currentAreaIndex = 0;
+        this.groupProjectsByArea();
+
+        this.loaded.emit(); 
+        console.log('[AreaWiseProjectChart] emitted loaded');
+      },
+      error: (err) => {
+        console.error('Area chart load error:', err);
+        this.error.emit('Failed to load area-wise project chart.');
       }
-    });
-
-    this.projectService.getAllProjects().subscribe((projects) => {
-      this.projects = projects;
-       console.log('Fetched Projects:', this.projects);
-      this.groupProjectsByArea();
-    });
-
-    this.statusService.getStatuses().subscribe((statuses) => {
-      this.statuses = statuses;
-      console.log('Fetched Statuses:', this.statuses);
     });
   }
 
-groupProjectsByArea(): void {
-  if (this.areas && this.projects) {
+  groupProjectsByArea(): void {
     this.areas.forEach(area => {
-      const areaProjects = this.projects.filter(project =>
-        project.area && project.area.id === area.id
-      );
-
-      // Sort the projects by status percentage descending
+      const areaProjects = this.projects.filter(p => p.area?.id === area.id);
       area.projects = areaProjects.sort((a, b) => b.status.percentage - a.status.percentage);
     });
   }
-}
 
-
-  getChartData(projects: Project[] | undefined): ChartData {
-    if (!projects || projects.length === 0) {
+  getChartData(projects?: Project[]): ChartData {
+    if (!projects?.length) {
       return {
         labels: [],
         datasets: [{
@@ -188,16 +151,11 @@ groupProjectsByArea(): void {
       };
     }
 
-    const data = projects.map(project =>
-      project.status.percentage >= 100 ? 99.5 : project.status.percentage
-    );
-
-    const colors = projects.map(project =>
-      this.getColor(project.status.percentage)
-    );
+    const data = projects.map(p => p.status.percentage >= 100 ? 99.5 : p.status.percentage);
+    const colors = projects.map(p => this.getColor(p.status.percentage));
 
     return {
-      labels: this.getProjectNames(projects),
+      labels: projects.map(p => p.projectName),
       datasets: [{
         data,
         backgroundColor: colors,
@@ -205,10 +163,6 @@ groupProjectsByArea(): void {
         borderWidth: 1
       }]
     };
-  }
-
-  getProjectNames(projects: Project[]): string[] {
-    return projects.map(project => project.projectName);
   }
 
   getColor(value: number): string {
@@ -224,42 +178,31 @@ groupProjectsByArea(): void {
     return '#4682B4';
   }
 
-  nextArea(): void {
-    if (this.areas && this.areas.length > 0) {
-      this.currentAreaIndex = (this.currentAreaIndex + 1) % this.areas.length;
-    }
-  }
-
-  prevArea(): void {
-    if (this.areas && this.areas.length > 0) {
-      this.currentAreaIndex = (this.currentAreaIndex - 1 + this.areas.length) % this.areas.length;
-    }
-  }
-
   hasProjects(): boolean {
-    return this.areas.length > 0 &&
-           this.currentAreaIndex < this.areas.length &&
-           !!this.areas[this.currentAreaIndex]?.projects?.length;
+  return !!(
+    this.areas.length &&
+    this.currentAreaIndex < this.areas.length &&
+    this.areas[this.currentAreaIndex].projects?.length
+  );
+}
+
+
+  getChartContainerStyle(): any {
+    if (!this.hasProjects()) return { height: '300px' };
+    const count = this.areas[this.currentAreaIndex].projects.length;
+    return { height: `${Math.max(300, count * 40 + 50)}px` };
+  }
+
+  nextArea() {
+    if (this.areas.length) this.currentAreaIndex = (this.currentAreaIndex + 1) % this.areas.length;
+  }
+
+  prevArea() {
+    if (this.areas.length)
+      this.currentAreaIndex = (this.currentAreaIndex - 1 + this.areas.length) % this.areas.length;
   }
 
   getCurrentAreaName(): string {
-    return this.areas.length > 0 &&
-           this.currentAreaIndex < this.areas.length &&
-           !!this.areas[this.currentAreaIndex] ?
-           this.areas[this.currentAreaIndex].name : 'No area selected';
-  }
-
-  getChartContainerStyle(): any {
-    if (!this.hasProjects()) {
-      return { height: '300px' };
-    }
-
-    const projectCount = this.areas[this.currentAreaIndex].projects.length;
-    const calculatedHeight = Math.max(300, (projectCount * 40) + 50);
-
-    return {
-      height: `${calculatedHeight}px`,
-      minHeight: '300px'
-    };
+    return this.areas?.[this.currentAreaIndex]?.name || 'No area selected';
   }
 }

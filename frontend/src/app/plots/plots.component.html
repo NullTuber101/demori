@@ -1,15 +1,21 @@
-<div class="dashboard-wrapper">
+<div class="dashboard-wrapper plot-wrapper">
 
-    <!-- Area-Wise Project Chart Section -->
+    <!-- Always render the charts -->
     <section>
         <h3 class="section-caption">Project Status by Area</h3>
-        <app-area-wise-project-chart></app-area-wise-project-chart>
+        <app-area-wise-project-chart (loaded)="onChildLoaded()" (error)="onChildError($event)">
+        </app-area-wise-project-chart>
     </section>
 
-    <!-- Scrum-wise Velocity Chart Section -->
     <section>
         <h3 class="section-caption">Scrum-Wise Velocity (Last 3 Sprints)</h3>
-        <app-velocity-plot></app-velocity-plot>
+        <app-velocity-plot (loaded)="onChildLoaded()" (error)="onChildError($event)">
+        </app-velocity-plot>
     </section>
+
+    <!-- Overlay spinner while loading -->
+    <div *ngIf="loading" class="spinner-overlay">
+        <mat-spinner diameter="50"></mat-spinner>
+    </div>
 
 </div>
