@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
@@ -33,17 +34,20 @@ public class UserController {
 
     // SUPER_USER or EDITOR can fetch user by ID
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_USER', 'EDITOR')")
-    public ResponseEntity<?> getUserById(@PathVariable Long id) {
-        return userService.getUserById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.status(404).body((User) Map.of("error", "User not found")));
+    @PreAuthorize("hasAnyRole('SUPER_USER')")
+    public ResponseEntity<Object> getUserById(@PathVariable Long id) {
+        Optional<User> userOpt = userService.getUserById(id);
+        if (userOpt.isPresent()) {
+            return ResponseEntity.ok(userOpt.get());
+        } else {
+            return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+        }
     }
 
     // Only SUPER_USER can change user roles
     @PutMapping("/{id}/role")
     @PreAuthorize("hasRole('SUPER_USER')")
-    public ResponseEntity<?> updateUserRole(@PathVariable Long id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<Object> updateUserRole(@PathVariable Long id, @RequestBody Map<String, String> body) {
         try {
             String roleName = body.get("roleName");
             userService.updateUserRole(id, roleName);
@@ -56,10 +60,12 @@ public class UserController {
     // Only SUPER_USER can delete a user
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('SUPER_USER')")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<Object> deleteUser(@PathVariable Long id) {
         boolean deleted = userService.deleteUser(id);
-        return deleted
-                ? ResponseEntity.ok(Map.of("message", "User deleted successfully"))
-                : ResponseEntity.status(404).body(Map.of("error", "User not found"));
+        if (deleted) {
+            return ResponseEntity.ok(Map.of("message", "User deleted successfully"));
+        } else {
+            return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+        }
     }
 }

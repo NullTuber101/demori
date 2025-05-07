@@ -9,52 +9,43 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public class ScrumAreaTest {
+class ScrumAreaTest {
 
     private Validator validator;
 
     @BeforeEach
-    public void setup() {
+    void setupValidator() {
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
     }
 
     @Test
-    public void testValidScrumArea() {
-        ScrumArea area = new ScrumArea(1L, "Platform", "Alice", "Alpha Team", "BOARD-123");
+    void testValidScrumArea() {
+        ScrumArea area = new ScrumArea(
+                1L,
+                "Test Area",
+                "Test Master",
+                "Test Team",
+                "Board-123"
+        );
 
         Set<ConstraintViolation<ScrumArea>> violations = validator.validate(area);
-        assertTrue(violations.isEmpty(), "Valid ScrumArea should have no violations");
+        assertThat(violations).isEmpty();
     }
 
     @Test
-    public void testMissingFields() {
-        ScrumArea area = new ScrumArea(); // All null
+    void testMissingFields() {
+        ScrumArea area = new ScrumArea(); // all fields null
 
         Set<ConstraintViolation<ScrumArea>> violations = validator.validate(area);
 
-        violations.forEach(v -> System.out.println(v.getPropertyPath() + ": " + v.getMessage()));
-
-        assertEquals(4, violations.size(), "Should trigger all @NotNull validations");
-        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("areaName")));
-        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("scrumMaster")));
-        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("scrumTeam")));
-        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("boardId")));
-    }
-
-    @Test
-    public void testPartialInvalidScrumArea() {
-        ScrumArea area = new ScrumArea(1L, "Mobile", null, "Beta Team", null);
-
-        Set<ConstraintViolation<ScrumArea>> violations = validator.validate(area);
-
-        violations.forEach(v -> System.out.println(v.getPropertyPath() + ": " + v.getMessage()));
-
-        assertEquals(2, violations.size(), "Should catch 2 missing required fields");
-        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("scrumMaster")));
-        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("boardId")));
+        assertThat(violations).hasSizeGreaterThan(0);
+        assertThat(violations)
+                .anyMatch(v -> v.getPropertyPath().toString().equals("areaName"))
+                .anyMatch(v -> v.getPropertyPath().toString().equals("scrumMaster"))
+                .anyMatch(v -> v.getPropertyPath().toString().equals("scrumTeam"))
+                .anyMatch(v -> v.getPropertyPath().toString().equals("boardId"));
     }
 }

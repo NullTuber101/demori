@@ -1,6 +1,7 @@
 package com.fdp.datareport.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 @Entity
@@ -15,6 +16,7 @@ public class Role {
     private Long id;
 
     @Column(unique = true, nullable = false)
+    @NotNull(message = "Role name is required")
     private String roleName; // SUPER_USER, VIEWER, EDITOR
 
     private boolean canApproveUsers;

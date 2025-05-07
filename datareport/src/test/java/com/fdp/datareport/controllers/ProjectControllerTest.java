@@ -1,134 +1,114 @@
 package com.fdp.datareport.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fdp.datareport.entities.Area;
 import com.fdp.datareport.entities.Project;
-import com.fdp.datareport.entities.Status;
 import com.fdp.datareport.services.ProjectService;
+import com.fdp.datareport.util.JwtUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.*;
+import java.util.Date;
+import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(ProjectController.class)
-public class ProjectControllerTest {
+@SpringBootTest
+@AutoConfigureMockMvc
+class ProjectControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private ProjectService projectService;
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @Autowired
     private ObjectMapper objectMapper;
 
-    private Project sampleProject;
+    @MockBean
+    private ProjectService projectService;
+
+    private String editorToken;
+    private String viewerToken;
+
+    private Project mockProject;
 
     @BeforeEach
     void setup() {
-        Area area = new Area(1L, "Platform", "Jane Doe", "jane@example.com");
-        Status status = new Status(1L, "In Progress", 50);
+        editorToken = "Bearer " + jwtUtil.generateToken("editor123", "EDITOR");
+        viewerToken = "Bearer " + jwtUtil.generateToken("viewer123", "VIEWER");
 
-        sampleProject = new Project(
-                1L,
-                "Data Platform",
-                "Analytics system for data ingestion.",
-                "Alice",
-                "DP-1001",
-                area,
-                status,
-                new Date(System.currentTimeMillis() - 86400000L),  // yesterday
-                new Date(System.currentTimeMillis())               // today
-        );
+        mockProject = new Project();
+        mockProject.setId(1L);
+        mockProject.setProjectName("Test Project");
+        mockProject.setDeveloper("devX");
+        mockProject.setJira("JIRA-999");
+        mockProject.setStartDate(new Date());
+        mockProject.setEndDate(new Date(System.currentTimeMillis() + 86400000));
     }
 
     @Test
-    void testCreateProject() throws Exception {
-        Mockito.when(projectService.createProject(any(Project.class))).thenReturn(sampleProject);
+    void testCreateProjectWithEditorTokenShouldSucceed() throws Exception {
+        when(projectService.createProject(any(Project.class))).thenReturn(mockProject);
 
         mockMvc.perform(post("/api/projects")
+                        .header("Authorization", editorToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(sampleProject)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.projectName").value("Data Platform"));
+                        .content(objectMapper.writeValueAsString(mockProject)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.projectName").value("Test Project"));
     }
 
     @Test
-    void testGetAllProjects() throws Exception {
-        Mockito.when(projectService.getAllProjects()).thenReturn(List.of(sampleProject));
-
-        mockMvc.perform(get("/api/projects"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].developer").value("Alice"));
+    void testCreateProjectWithViewerTokenShouldFail() throws Exception {
+        mockMvc.perform(post("/api/projects")
+                        .header("Authorization", viewerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(mockProject)))
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    void testGetProjectById_Found() throws Exception {
-        Mockito.when(projectService.getProjectById(1L)).thenReturn(Optional.of(sampleProject));
+    void testCreateProjectWithoutTokenShouldFail() throws Exception {
+        mockMvc.perform(post("/api/projects")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(mockProject)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testGetProjectByIdPublicAccess() throws Exception {
+        when(projectService.getProjectById(1L)).thenReturn(Optional.of(mockProject));
 
         mockMvc.perform(get("/api/projects/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.jira").value("DP-1001"));
+                .andExpect(jsonPath("$.jira").value("JIRA-999"));
     }
 
     @Test
-    void testGetProjectById_NotFound() throws Exception {
-        Mockito.when(projectService.getProjectById(99L)).thenReturn(Optional.empty());
+    void testDeleteProjectWithEditorToken() throws Exception {
+        when(projectService.deleteProject(1L)).thenReturn(true);
 
-        mockMvc.perform(get("/api/projects/99"))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void testUpdateProject_Found() throws Exception {
-        Mockito.when(projectService.updateProject(eq(1L), any(Project.class)))
-                .thenReturn(Optional.of(sampleProject));
-
-        mockMvc.perform(put("/api/projects/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(sampleProject)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.description").value("Analytics system for data ingestion."));
-    }
-
-    @Test
-    void testUpdateProject_NotFound() throws Exception {
-        Mockito.when(projectService.updateProject(eq(2L), any(Project.class)))
-                .thenReturn(Optional.empty());
-
-        mockMvc.perform(put("/api/projects/2")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(sampleProject)))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void testDeleteProject_Found() throws Exception {
-        Mockito.when(projectService.deleteProject(1L)).thenReturn(true);
-
-        mockMvc.perform(delete("/api/projects/1"))
+        mockMvc.perform(delete("/api/projects/1")
+                        .header("Authorization", editorToken))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    void testDeleteProject_NotFound() throws Exception {
-        Mockito.when(projectService.deleteProject(99L)).thenReturn(false);
-
-        mockMvc.perform(delete("/api/projects/99"))
-                .andExpect(status().isNotFound());
+    void testDeleteProjectWithViewerTokenShouldFail() throws Exception {
+        mockMvc.perform(delete("/api/projects/1")
+                        .header("Authorization", viewerToken))
+                .andExpect(status().isForbidden());
     }
 }

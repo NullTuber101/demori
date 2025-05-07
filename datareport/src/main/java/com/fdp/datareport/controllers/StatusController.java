@@ -10,6 +10,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/statuses")
@@ -28,10 +30,14 @@ public class StatusController {
 
     // Public: Get a status by ID
     @GetMapping("/{id}")
-    public ResponseEntity<Status> getStatusById(@PathVariable Long id) {
-        return statusService.getStatusById(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
+    public ResponseEntity<Object> getStatusById(@PathVariable Long id) {
+        Optional<Status> status = statusService.getStatusById(id);
+        if (status.isPresent()) {
+            return ResponseEntity.ok(status.get());
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Status with ID " + id + " not found"));
+        }
     }
 
     // Restricted: Add a new status (EDITOR or SUPER_USER)
@@ -45,21 +51,25 @@ public class StatusController {
     // Restricted: Update an existing status (EDITOR or SUPER_USER)
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('EDITOR', 'SUPER_USER')")
-    public ResponseEntity<Status> updateStatus(@PathVariable Long id, @Valid @RequestBody Status status) {
+    public ResponseEntity<Object> updateStatus(@PathVariable Long id, @Valid @RequestBody Status status) {
         Status updatedStatus = statusService.updateStatus(id, status);
-        return updatedStatus != null
-                ? ResponseEntity.ok(updatedStatus)
-                : ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        if (updatedStatus != null) {
+            return ResponseEntity.ok(updatedStatus);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Status with ID " + id + " not found"));
+        }
     }
 
     // Restricted: Delete a status (EDITOR or SUPER_USER)
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('EDITOR', 'SUPER_USER')")
-    public ResponseEntity<Void> deleteStatus(@PathVariable Long id) {
+    public ResponseEntity<Object> deleteStatus(@PathVariable Long id) {
         if (statusService.deleteStatus(id)) {
             return ResponseEntity.noContent().build();
         } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Status with ID " + id + " not found"));
         }
     }
 }

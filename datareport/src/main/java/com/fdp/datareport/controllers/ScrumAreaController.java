@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/scrum-areas")
@@ -24,10 +25,14 @@ public class ScrumAreaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ScrumArea> getScrumAreaById(@PathVariable Long id) {
-        return scrumAreaService.getScrumAreaById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<Object> getScrumAreaById(@PathVariable Long id) {
+        Optional<ScrumArea> optionalArea = scrumAreaService.getScrumAreaById(id);
+        if (optionalArea.isPresent()) {
+            return ResponseEntity.ok(optionalArea.get());
+        } else {
+            return ResponseEntity.status(404)
+                    .body(java.util.Map.of("error", "ScrumArea with ID " + id + " not found"));
+        }
     }
 
     @PostMapping

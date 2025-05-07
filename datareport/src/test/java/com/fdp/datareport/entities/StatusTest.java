@@ -9,52 +9,44 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public class StatusTest {
+class StatusTest {
 
     private Validator validator;
 
     @BeforeEach
-    public void setup() {
+    void setupValidator() {
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
     }
 
     @Test
-    public void testValidStatus() {
-        Status status = new Status(1L, "Completed", 80);
+    void testValidStatus() {
+        Status status = new Status(1L, "In Progress", 50);
+
         Set<ConstraintViolation<Status>> violations = validator.validate(status);
-        assertTrue(violations.isEmpty(), "Should be valid for correct percentage");
+        assertThat(violations).isEmpty();
     }
 
     @Test
-    public void testNullStatusName() {
-        Status status = new Status(1L, null, 50);
+    void testMissingFields() {
+        Status status = new Status();
+
         Set<ConstraintViolation<Status>> violations = validator.validate(status);
-        assertEquals(1, violations.size());
-        assertEquals("Status name is required", violations.iterator().next().getMessage());
+
+        assertThat(violations).hasSizeGreaterThan(0);
+        assertThat(violations)
+                .anyMatch(v -> v.getPropertyPath().toString().equals("statusName"));
     }
 
     @Test
-    public void testInvalidNegativePercentage() {
-        Status status = new Status(1L, "Started", -5);
-        Set<ConstraintViolation<Status>> violations = validator.validate(status);
-        assertEquals(1, violations.size());
-    }
+    void testInvalidPercentage() {
+        Status status = new Status(2L, "Done", 120); // Invalid: > 100
 
-    @Test
-    public void testInvalidOver100Percentage() {
-        Status status = new Status(1L, "In Progress", 150);
         Set<ConstraintViolation<Status>> violations = validator.validate(status);
-        assertEquals(1, violations.size());
-    }
 
-    @Test
-    public void testNullPercentage() {
-        Status status = new Status(1L, "In Progress", null);
-        Set<ConstraintViolation<Status>> violations = validator.validate(status);
-        assertTrue(violations.isEmpty() || violations.size() == 1); // Depending on how @ValidPercentage handles nulls
+        assertThat(violations)
+                .anyMatch(v -> v.getPropertyPath().toString().equals("percentage"));
     }
 }

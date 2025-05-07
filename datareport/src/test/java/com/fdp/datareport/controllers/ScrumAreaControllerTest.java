@@ -1,98 +1,102 @@
 package com.fdp.datareport.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fdp.datareport.entities.ScrumArea;
 import com.fdp.datareport.services.ScrumAreaService;
+import com.fdp.datareport.util.JwtUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(ScrumAreaController.class)
-public class ScrumAreaControllerTest {
+@SpringBootTest
+@AutoConfigureMockMvc
+class ScrumAreaControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private ScrumAreaService scrumAreaService;
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @Autowired
     private ObjectMapper objectMapper;
 
-    private ScrumArea sampleArea;
+    @MockBean
+    private ScrumAreaService scrumAreaService;
+
+    private ScrumArea mockArea;
+    private String editorToken;
+    private String viewerToken;
 
     @BeforeEach
     void setup() {
-        sampleArea = new ScrumArea(1L, "Platform", "John Doe", "Team A", "BOARD-001");
+        mockArea = new ScrumArea(1L, "AreaX", "John Doe", "Team Rocket", "BRD-123");
+        editorToken = "Bearer " + jwtUtil.generateToken("editor1", "EDITOR");
+        viewerToken = "Bearer " + jwtUtil.generateToken("viewer1", "VIEWER");
     }
 
     @Test
-    void testGetAllScrumAreas() throws Exception {
-        Mockito.when(scrumAreaService.getAllScrumAreas()).thenReturn(List.of(sampleArea));
+    void getAllScrumAreasShouldSucceedWithoutAuth() throws Exception {
+        when(scrumAreaService.getAllScrumAreas()).thenReturn(List.of(mockArea));
 
         mockMvc.perform(get("/api/scrum-areas"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].scrumMaster").value("John Doe"));
+                .andExpect(jsonPath("$.length()").value(1));
     }
 
     @Test
-    void testGetScrumAreaById_Found() throws Exception {
-        Mockito.when(scrumAreaService.getScrumAreaById(1L)).thenReturn(Optional.of(sampleArea));
+    void getScrumAreaByIdNotFound() throws Exception {
+        when(scrumAreaService.getScrumAreaById(999L)).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/api/scrum-areas/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.areaName").value("Platform"));
+        mockMvc.perform(get("/api/scrum-areas/999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("ScrumArea with ID 999 not found"));
     }
 
     @Test
-    void testGetScrumAreaById_NotFound() throws Exception {
-        Mockito.when(scrumAreaService.getScrumAreaById(99L)).thenReturn(Optional.empty());
-
-        mockMvc.perform(get("/api/scrum-areas/99"))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void testCreateScrumArea() throws Exception {
-        Mockito.when(scrumAreaService.createScrumArea(any(ScrumArea.class))).thenReturn(sampleArea);
-
+    void createScrumAreaShouldReturn403WithoutToken() throws Exception {
         mockMvc.perform(post("/api/scrum-areas")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(sampleArea)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.boardId").value("BOARD-001"));
+                        .content(objectMapper.writeValueAsString(mockArea)))
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    void testUpdateScrumArea() throws Exception {
-        Mockito.when(scrumAreaService.updateScrumArea(eq(1L), any(ScrumArea.class))).thenReturn(sampleArea);
+    void createScrumAreaWithEditorTokenShouldSucceed() throws Exception {
+        when(scrumAreaService.createScrumArea(any(ScrumArea.class))).thenReturn(mockArea);
 
-        mockMvc.perform(put("/api/scrum-areas/1")
+        mockMvc.perform(post("/api/scrum-areas")
+                        .header("Authorization", editorToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(sampleArea)))
+                        .content(objectMapper.writeValueAsString(mockArea)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.scrumTeam").value("Team A"));
+                .andExpect(jsonPath("$.areaName").value("AreaX"));
     }
 
     @Test
-    void testDeleteScrumArea() throws Exception {
-        mockMvc.perform(delete("/api/scrum-areas/1"))
+    void deleteScrumAreaWithEditorTokenShouldSucceed() throws Exception {
+        doNothing().when(scrumAreaService).deleteScrumArea(1L);
+
+        mockMvc.perform(delete("/api/scrum-areas/1")
+                        .header("Authorization", editorToken))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void deleteScrumAreaWithoutTokenShouldReturn403() throws Exception {
+        mockMvc.perform(delete("/api/scrum-areas/1"))
+                .andExpect(status().isForbidden());
     }
 }

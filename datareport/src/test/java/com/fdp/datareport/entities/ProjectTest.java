@@ -1,3 +1,4 @@
+
 package com.fdp.datareport.entities;
 
 import com.fdp.datareport.validation.annotations.ValidDateRange;
@@ -13,7 +14,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ProjectEntityTest {
+class ProjectTest {
 
     private static Validator validator;
 

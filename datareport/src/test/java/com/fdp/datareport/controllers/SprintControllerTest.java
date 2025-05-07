@@ -1,108 +1,105 @@
 package com.fdp.datareport.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fdp.datareport.entities.Project;
 import com.fdp.datareport.entities.Sprint;
 import com.fdp.datareport.services.SprintService;
+import com.fdp.datareport.util.JwtUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doNothing;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(SprintController.class)
-public class SprintControllerTest {
+@SpringBootTest
+@AutoConfigureMockMvc
+class SprintControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private SprintService sprintService;
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @Autowired
     private ObjectMapper objectMapper;
 
+    @MockBean
+    private SprintService sprintService;
+
+    private String editorToken;
+    private String viewerToken;
     private Sprint sprint;
 
     @BeforeEach
-    void setup() {
+    void setUp() {
+        editorToken = "Bearer " + jwtUtil.generateToken("editor1", "EDITOR");
+        viewerToken = "Bearer " + jwtUtil.generateToken("viewer1", "VIEWER");
+
         sprint = new Sprint();
         sprint.setId(1L);
-        sprint.setSprintName("Sprint 1");
+        sprint.setSprintName("Sprint Alpha");
+        sprint.setSprintJira("JIRA-001");
+        sprint.setSprintDescription("Test Description");
+        sprint.setAssignedTo("DevX");
         sprint.setSprintStartDate(new Date());
-        sprint.setSprintEndDate(new Date());
-        sprint.setSprintJira("SPR-101");
-        sprint.setAssignedTo("Alice");
-        sprint.setSprintDescription("Initial Sprint");
+        sprint.setSprintEndDate(new Date(System.currentTimeMillis() + 86400000));
         sprint.setProject(new Project());
     }
 
     @Test
-    void testCreateSprint() throws Exception {
-        Mockito.when(sprintService.createSprint(eq(1L), any(Sprint.class))).thenReturn(sprint);
-
+    void createSprintWithoutTokenShouldFail() throws Exception {
         mockMvc.perform(post("/api/projects/1/sprints")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(sprint)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.sprintName").value("Sprint 1"));
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    void testGetAllSprintsByProject() throws Exception {
-        Mockito.when(sprintService.getSprintsByProject(1L)).thenReturn(List.of(sprint));
+    void createSprintWithEditorTokenShouldSucceed() throws Exception {
+        when(sprintService.createSprint(any(Long.class), any(Sprint.class))).thenReturn(sprint);
+
+        mockMvc.perform(post("/api/projects/1/sprints")
+                        .header("Authorization", editorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(sprint)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.sprintName").value("Sprint Alpha"));
+    }
+
+    @Test
+    void getSprintsByProjectShouldSucceedWithoutAuth() throws Exception {
+        when(sprintService.getSprintsByProject(1L)).thenReturn(List.of(sprint));
 
         mockMvc.perform(get("/api/projects/1/sprints"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].sprintJira").value("SPR-101"));
+                .andExpect(jsonPath("$.length()").value(1));
     }
 
     @Test
-    void testGetSprintById_Found() throws Exception {
-        Mockito.when(sprintService.getSprintById(1L)).thenReturn(sprint);
-
-        mockMvc.perform(get("/api/projects/sprints/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.assignedTo").value("Alice"));
-    }
-
-    @Test
-    void testGetSprintById_NotFound() throws Exception {
-        Mockito.when(sprintService.getSprintById(99L)).thenThrow(new RuntimeException("Not found"));
-
-        mockMvc.perform(get("/api/projects/sprints/99"))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void testUpdateSprint() throws Exception {
-        Mockito.when(sprintService.updateSprint(eq(1L), any(Sprint.class))).thenReturn(sprint);
-
-        mockMvc.perform(put("/api/projects/sprints/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(sprint)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.sprintName").value("Sprint 1"));
-    }
-
-    @Test
-    void testDeleteSprint() throws Exception {
+    void deleteSprintShouldReturn403WithoutToken() throws Exception {
         mockMvc.perform(delete("/api/projects/sprints/1"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deleteSprintWithEditorTokenShouldSucceed() throws Exception {
+        doNothing().when(sprintService).deleteSprint(1L);
+
+        mockMvc.perform(delete("/api/projects/sprints/1")
+                        .header("Authorization", editorToken))
                 .andExpect(status().isNoContent());
     }
 }

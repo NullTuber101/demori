@@ -3,120 +3,101 @@ package com.fdp.datareport.services;
 import com.fdp.datareport.entities.Area;
 import com.fdp.datareport.repositories.AreaRepository;
 import com.fdp.datareport.repositories.ProjectRepository;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
 
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 class AreaServiceTest {
 
+    @InjectMocks
+    private AreaService areaService;
+
     @Mock
-    private AreaRepository areaRepository;
+    private AreaRepository areaRepo;
 
     @Mock
     private ProjectRepository projectRepository;
 
-    @InjectMocks
-    private AreaService areaService;
-
-    private AutoCloseable closeable;
-
-    private Area area1;
+    private Area sampleArea;
 
     @BeforeEach
     void setUp() {
-        closeable = MockitoAnnotations.openMocks(this);
-        area1 = new Area(1L, "area1", "lead1", "lead1@example.com");
+        MockitoAnnotations.openMocks(this);
+        sampleArea = new Area(1L, "Test Area", "Lead Name", "lead@example.com");
     }
 
     @Test
     void testGetAllAreas() {
-        List<Area> areas = List.of(area1);
-        when(areaRepository.findAll()).thenReturn(areas);
-
+        when(areaRepo.findAll()).thenReturn(List.of(sampleArea));
         List<Area> result = areaService.getAllAreas();
-        assertEquals(1, result.size());
-        assertEquals("area1", result.get(0).getName());
-        verify(areaRepository, times(1)).findAll();
+        assertThat(result).hasSize(1).contains(sampleArea);
     }
 
     @Test
-    void testGetAreaById_Found() {
-        when(areaRepository.findById(1L)).thenReturn(Optional.of(area1));
-
+    void testGetAreaById_found() {
+        when(areaRepo.findById(1L)).thenReturn(Optional.of(sampleArea));
         Optional<Area> result = areaService.getAreaById(1L);
-        assertTrue(result.isPresent());
-        assertEquals("area1", result.get().getName());
+        assertThat(result).isPresent().contains(sampleArea);
     }
 
     @Test
-    void testGetAreaById_NotFound() {
-        when(areaRepository.findById(2L)).thenReturn(Optional.empty());
-
-        Optional<Area> result = areaService.getAreaById(2L);
-        assertFalse(result.isPresent());
+    void testGetAreaById_notFound() {
+        when(areaRepo.findById(1L)).thenReturn(Optional.empty());
+        Optional<Area> result = areaService.getAreaById(1L);
+        assertThat(result).isEmpty();
     }
 
     @Test
     void testAddArea() {
-        when(areaRepository.save(area1)).thenReturn(area1);
-
-        Area result = areaService.addArea(area1);
-        assertNotNull(result);
-        assertEquals("lead1", result.getLeadName());
-        verify(areaRepository, times(1)).save(area1);
+        when(areaRepo.save(sampleArea)).thenReturn(sampleArea);
+        Area result = areaService.addArea(sampleArea);
+        assertThat(result).isEqualTo(sampleArea);
     }
 
     @Test
-    void testUpdateArea_WhenExists() {
-        when(areaRepository.existsById(1L)).thenReturn(true);
-        when(areaRepository.save(any(Area.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0)); // <-- Fix here
+    void testUpdateArea_exists() {
+        when(areaRepo.existsById(1L)).thenReturn(true);
+        when(areaRepo.save(any(Area.class))).thenReturn(sampleArea);
 
-        Area updatedArea = new Area(null, "area1-updated", "lead1-updated", "lead1-updated@example.com");
-        Area result = areaService.updateArea(1L, updatedArea);
+        Area updated = new Area(null, "Updated", "New Lead", "new@example.com");
+        Area result = areaService.updateArea(1L, updated);
 
-        assertNotNull(result);
-        assertEquals(1L, result.getId());
-        assertEquals("area1-updated", result.getName());
-    }
-    @Test
-    void testUpdateArea_WhenNotExists() {
-        when(areaRepository.existsById(1L)).thenReturn(false);
-
-        Area result = areaService.updateArea(1L, area1);
-        assertNull(result);
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+        verify(areaRepo).save(updated);
     }
 
     @Test
-    void testDeleteArea_WhenExists() {
-        when(areaRepository.findById(1L)).thenReturn(Optional.of(area1));
-        doNothing().when(projectRepository).deleteByArea(area1);
-        doNothing().when(areaRepository).deleteById(1L);
+    void testUpdateArea_notExists() {
+        when(areaRepo.existsById(1L)).thenReturn(false);
+        Area result = areaService.updateArea(1L, sampleArea);
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void testDeleteArea_found() {
+        when(areaRepo.findById(1L)).thenReturn(Optional.of(sampleArea));
 
         boolean deleted = areaService.deleteArea(1L);
 
-        assertTrue(deleted);
-        verify(projectRepository).deleteByArea(area1);
-        verify(areaRepository).deleteById(1L);
+        assertThat(deleted).isTrue();
+        verify(projectRepository).deleteByArea(sampleArea);
+        verify(areaRepo).deleteById(1L);
     }
 
     @Test
-    void testDeleteArea_WhenNotFound() {
-        when(areaRepository.findById(1L)).thenReturn(Optional.empty());
+    void testDeleteArea_notFound() {
+        when(areaRepo.findById(1L)).thenReturn(Optional.empty());
 
         boolean deleted = areaService.deleteArea(1L);
-        assertFalse(deleted);
-        verify(areaRepository, never()).deleteById(anyLong());
-    }
 
-    @AfterEach
-    void tearDown() throws Exception {
-        closeable.close();
+        assertThat(deleted).isFalse();
+        verify(projectRepository, never()).deleteByArea(any());
+        verify(areaRepo, never()).deleteById(any());
     }
 }

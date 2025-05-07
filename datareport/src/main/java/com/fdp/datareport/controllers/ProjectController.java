@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -22,40 +23,43 @@ public class ProjectController {
 
     // Public - Get all projects
     @GetMapping
-    public List<Project> getAllProjects() {
-        return projectService.getAllProjects();
+    public ResponseEntity<List<Project>> getAllProjects() {
+        return ResponseEntity.ok(projectService.getAllProjects());
     }
 
     // Public - Get project by ID
     @GetMapping("/{id}")
-    public ResponseEntity<Project> getProjectById(@PathVariable Long id) {
+    public ResponseEntity<Object> getProjectById(@PathVariable Long id) {
         Optional<Project> project = projectService.getProjectById(id);
-        return project.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return project.map(p -> ResponseEntity.ok((Object) p))
+                .orElseGet(() -> ResponseEntity.status(404).body(Map.of("error", "Project not found")));
     }
+
 
     // Restricted - Create project (EDITOR, SUPER_USER)
     @PostMapping
     @PreAuthorize("hasAnyRole('EDITOR', 'SUPER_USER')")
-    public ResponseEntity<Project> createProject(@Valid @RequestBody Project project) {
-        return ResponseEntity.ok(projectService.createProject(project));
+    public ResponseEntity<Object> createProject(@Valid @RequestBody Project project) {
+        return ResponseEntity.status(201).body(projectService.createProject(project));
     }
 
     // Restricted - Update project (EDITOR, SUPER_USER)
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('EDITOR', 'SUPER_USER')")
-    public ResponseEntity<Project> updateProject(@PathVariable Long id, @Valid @RequestBody Project project) {
+    public ResponseEntity<Object> updateProject(@PathVariable Long id, @Valid @RequestBody Project project) {
         Optional<Project> updatedProject = projectService.updateProject(id, project);
-        return updatedProject.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return updatedProject.map(p -> ResponseEntity.ok((Object) p))
+                .orElseGet(() -> ResponseEntity.status(404).body(Map.of("error", "Project not found")));
     }
 
     // Restricted - Delete project (EDITOR, SUPER_USER)
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('EDITOR', 'SUPER_USER')")
-    public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
+    public ResponseEntity<Object> deleteProject(@PathVariable Long id) {
         if (projectService.deleteProject(id)) {
             return ResponseEntity.noContent().build();
         } else {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body(Map.of("error", "Project not found"));
         }
     }
 }

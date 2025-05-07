@@ -156,6 +156,7 @@ export class VelocitySectionComponent implements OnInit {
           next: () => {
             this.snackBar.open('Scrum Area deleted', 'Close', { duration: 3000 });
             this.loadScrumAreas();
+            location.reload();
             if (this.editingScrumAreaId === id) {
               this.scrumAreaForm.reset();
               this.editingScrumAreaId = null;

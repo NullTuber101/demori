@@ -32,6 +32,22 @@ public class UserService {
         return userRepository.findByBrid(brid).orElse(null);
     }
 
+    public void initializeDefaultUser() {
+        if (userRepository.count() == 0) {
+            Role role = roleService.getRoleByName("SUPER_USER");
+
+            User user = User.builder()
+                    .brid("admin01")
+                    .name("Admin User")
+                    .email("admin@example.com")
+                    .password(passwordEncoder.encode("admin123"))
+                    .role(role)
+                    .build();
+
+            userRepository.save(user);
+        }
+    }
+
     public void updateUserRole(Long id, String roleName) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));

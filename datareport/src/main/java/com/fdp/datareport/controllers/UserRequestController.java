@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/requests")
@@ -24,21 +25,27 @@ public class UserRequestController {
 
     // Publicly accessible - no login required
     @PostMapping("/signup")
-    public ResponseEntity<?> signupRequest(@RequestBody UserRequest request) {
+    public ResponseEntity<Object> signupRequest(@RequestBody UserRequest request) {
         boolean existsInUsers = userService.isDuplicate(request.getBrid(), request.getEmail());
         boolean existsInRequests = userRequestService.isDuplicate(request.getBrid(), request.getEmail());
 
         if (existsInUsers || existsInRequests) {
-            return ResponseEntity.status(409).body(Map.of("error", "BRID or Email already exists or is under review."));
+            return ResponseEntity.status(409)
+                    .body(Map.of("error", "BRID or Email already exists or is under review."));
         }
 
         try {
             UserRequest savedRequest = userRequestService.createRequest(request);
-            return ResponseEntity.ok(Map.of("message", "Signup request submitted successfully.", "requestId", savedRequest.getId()));
+            return ResponseEntity.ok(Map.of(
+                    "message", "Signup request submitted successfully.",
+                    "requestId", savedRequest.getId()
+            ));
         } catch (DataIntegrityViolationException ex) {
-            return ResponseEntity.status(409).body(Map.of("error", "Duplicate BRID or Email detected."));
+            return ResponseEntity.status(409)
+                    .body(Map.of("error", "Duplicate BRID or Email detected."));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("error", "Signup failed: " + e.getMessage()));
+            return ResponseEntity.status(500)
+                    .body(Map.of("error", "Signup failed: " + e.getMessage()));
         }
     }
 
@@ -52,36 +59,51 @@ public class UserRequestController {
     // Only SUPER_USER can approve
     @PostMapping("/{id}/approve")
     @PreAuthorize("hasRole('SUPER_USER')")
-    public ResponseEntity<?> approveRequest(@PathVariable Long id, @RequestParam String roleName) {
-        return userRequestService.getRequestById(id)
-                .map(request -> {
-                    if (request.getStatus() != RequestStatus.PENDING) {
-                        return ResponseEntity.badRequest().body(Map.of("error", "Request already reviewed."));
-                    }
-                    try {
-                        User user = userService.approveRequest(request, roleName);
-                        return ResponseEntity.ok(Map.of("message", "User approved successfully.", "userId", user.getId()));
-                    } catch (DataIntegrityViolationException ex) {
-                        return ResponseEntity.status(409).body(Map.of("error", "BRID or Email already exists."));
-                    } catch (Exception e) {
-                        return ResponseEntity.status(500).body(Map.of("error", "Approval failed: " + e.getMessage()));
-                    }
-                })
-                .orElse(ResponseEntity.status(404).body(Map.of("error", "Request not found")));
+    public ResponseEntity<Object> approveRequest(@PathVariable Long id, @RequestParam String roleName) {
+        Optional<UserRequest> optional = userRequestService.getRequestById(id);
+        if (optional.isEmpty()) {
+            return ResponseEntity.status(404)
+                    .body(Map.of("error", "Request not found"));
+        }
+
+        UserRequest request = optional.get();
+        if (request.getStatus() != RequestStatus.PENDING) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Request already reviewed."));
+        }
+
+        try {
+            User user = userService.approveRequest(request, roleName);
+            return ResponseEntity.ok(Map.of(
+                    "message", "User approved successfully.",
+                    "userId", user.getId()
+            ));
+        } catch (DataIntegrityViolationException ex) {
+            return ResponseEntity.status(409)
+                    .body(Map.of("error", "BRID or Email already exists."));
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body(Map.of("error", "Approval failed: " + e.getMessage()));
+        }
     }
 
     // Only SUPER_USER can reject
     @PostMapping("/{id}/reject")
     @PreAuthorize("hasRole('SUPER_USER')")
-    public ResponseEntity<?> rejectRequest(@PathVariable Long id, @RequestParam String reason) {
-        return userRequestService.getRequestById(id)
-                .map(req -> {
-                    if (req.getStatus() != RequestStatus.PENDING) {
-                        return ResponseEntity.badRequest().body(Map.of("error", "Request already reviewed."));
-                    }
-                    userRequestService.rejectRequest(id, reason);
-                    return ResponseEntity.ok(Map.of("message", "Request rejected successfully."));
-                })
-                .orElse(ResponseEntity.status(404).body(Map.of("error", "Request not found")));
+    public ResponseEntity<Object> rejectRequest(@PathVariable Long id, @RequestParam String reason) {
+        Optional<UserRequest> optional = userRequestService.getRequestById(id);
+        if (optional.isEmpty()) {
+            return ResponseEntity.status(404)
+                    .body(Map.of("error", "Request not found"));
+        }
+
+        UserRequest request = optional.get();
+        if (request.getStatus() != RequestStatus.PENDING) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Request already reviewed."));
+        }
+
+        userRequestService.rejectRequest(id, reason);
+        return ResponseEntity.ok(Map.of("message", "Request rejected successfully."));
     }
 }

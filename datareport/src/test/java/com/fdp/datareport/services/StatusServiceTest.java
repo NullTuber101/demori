@@ -4,15 +4,19 @@ import com.fdp.datareport.entities.Project;
 import com.fdp.datareport.entities.Status;
 import com.fdp.datareport.repositories.ProjectRepository;
 import com.fdp.datareport.repositories.StatusRepository;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.*;
 
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class StatusServiceTest {
+
+    @InjectMocks
+    private StatusService statusService;
 
     @Mock
     private StatusRepository statusRepository;
@@ -20,116 +24,95 @@ class StatusServiceTest {
     @Mock
     private ProjectRepository projectRepository;
 
-    @InjectMocks
-    private StatusService statusService;
-
-    private AutoCloseable closeable;
-
-    private Status status1;
-
     @BeforeEach
     void setUp() {
-        closeable = MockitoAnnotations.openMocks(this);
-        status1 = new Status(1L, "In Progress", 50);
+        MockitoAnnotations.openMocks(this);
+    }
+
+    private Status createStatus() {
+        return new Status(1L, "In Progress", 50);
     }
 
     @Test
     void testGetAllStatuses() {
-        when(statusRepository.findAll()).thenReturn(List.of(status1));
+        List<Status> statuses = List.of(createStatus());
+        when(statusRepository.findAll()).thenReturn(statuses);
 
         List<Status> result = statusService.getAllStatuses();
-        assertEquals(1, result.size());
-        assertEquals("In Progress", result.get(0).getStatusName());
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getStatusName()).isEqualTo("In Progress");
     }
 
     @Test
-    void testGetStatusById_Found() {
-        when(statusRepository.findById(1L)).thenReturn(Optional.of(status1));
+    void testGetStatusById() {
+        Status status = createStatus();
+        when(statusRepository.findById(1L)).thenReturn(Optional.of(status));
 
         Optional<Status> result = statusService.getStatusById(1L);
-        assertTrue(result.isPresent());
-        assertEquals(50, result.get().getPercentage());
-    }
 
-    @Test
-    void testGetStatusById_NotFound() {
-        when(statusRepository.findById(2L)).thenReturn(Optional.empty());
-
-        Optional<Status> result = statusService.getStatusById(2L);
-        assertFalse(result.isPresent());
+        assertThat(result).isPresent();
+        assertThat(result.get().getPercentage()).isEqualTo(50);
     }
 
     @Test
     void testCreateStatus() {
-        when(statusRepository.save(status1)).thenReturn(status1);
+        Status status = createStatus();
+        when(statusRepository.save(status)).thenReturn(status);
 
-        Status result = statusService.createStatus(status1);
-        assertNotNull(result);
-        assertEquals("In Progress", result.getStatusName());
+        Status result = statusService.createStatus(status);
+
+        assertThat(result.getStatusName()).isEqualTo("In Progress");
     }
 
     @Test
-    void testUpdateStatus_WhenExists() {
-        when(statusRepository.existsById(1L)).thenReturn(true);
-        when(statusRepository.save(any(Status.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    void testUpdateStatusWhenExists() {
+        Status updated = createStatus();
+        updated.setStatusName("Done");
 
-        Status updated = new Status(null, "Completed", 100);
+        when(statusRepository.existsById(1L)).thenReturn(true);
+        when(statusRepository.save(updated)).thenReturn(updated);
+
         Status result = statusService.updateStatus(1L, updated);
 
-        assertEquals(1L, result.getId());
-        assertEquals("Completed", result.getStatusName());
-        assertEquals(100, result.getPercentage());
+        assertThat(result.getStatusName()).isEqualTo("Done");
+        assertThat(result.getId()).isEqualTo(1L);
     }
 
     @Test
-    void testUpdateStatus_WhenNotExists() {
+    void testUpdateStatusWhenNotExists() {
+        Status updated = createStatus();
         when(statusRepository.existsById(1L)).thenReturn(false);
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () ->
-                statusService.updateStatus(1L, status1)
+        assertThatThrownBy(() -> statusService.updateStatus(1L, updated))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Status not found");
+    }
+
+    @Test
+    void testDeleteStatusWhenExists() {
+        Status status = createStatus();
+        List<Project> projects = List.of(
+                new Project(1L, "Proj1", "Desc", "Dev", "JIRA-1", null, status, new Date(), new Date())
         );
 
-        assertEquals("Status not found with id 1", ex.getMessage());
-    }
-
-    @Test
-    void testDeleteStatus_WhenExists() {
-        when(statusRepository.findById(1L)).thenReturn(Optional.of(status1));
-        when(projectRepository.findByStatus(status1)).thenReturn(List.of());
+        when(statusRepository.findById(1L)).thenReturn(Optional.of(status));
+        when(projectRepository.findByStatus(status)).thenReturn(projects);
 
         boolean deleted = statusService.deleteStatus(1L);
 
-        assertTrue(deleted);
+        assertThat(deleted).isTrue();
+        verify(projectRepository).save(any(Project.class));
         verify(statusRepository).deleteById(1L);
     }
 
     @Test
-    void testDeleteStatus_WhenUsedInProjects() {
-        Project project1 = new Project();
-        project1.setStatus(status1);
+    void testDeleteStatusWhenNotExists() {
+        when(statusRepository.findById(1L)).thenReturn(Optional.empty());
 
-        when(statusRepository.findById(1L)).thenReturn(Optional.of(status1));
-        when(projectRepository.findByStatus(status1)).thenReturn(List.of(project1));
-        when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        boolean result = statusService.deleteStatus(1L);
 
-        boolean deleted = statusService.deleteStatus(1L);
-
-        assertTrue(deleted);
-        verify(projectRepository).save(project1);
-        assertNull(project1.getStatus());
-        verify(statusRepository).deleteById(1L);
-    }
-
-    @Test
-    void testDeleteStatus_WhenNotFound() {
-        when(statusRepository.findById(99L)).thenReturn(Optional.empty());
-
-        boolean deleted = statusService.deleteStatus(99L);
-        assertFalse(deleted);
-    }
-
-    @AfterEach
-    void tearDown() throws Exception {
-        closeable.close();
+        assertThat(result).isFalse();
+        verify(statusRepository, never()).deleteById(anyLong());
     }
 }

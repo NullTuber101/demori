@@ -34,22 +34,15 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .headers(headers -> headers.frameOptions(frame -> frame.disable())) // ✅ correct modern usage
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
+                        .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/requests/signup").permitAll()
-
-                        // 🔐 SUPER_USER protected GETs - must come before general GET permitAll
                         .requestMatchers(HttpMethod.GET, "/api/users/**", "/api/requests/pending/**").hasRole("SUPER_USER")
-
-                        // Public GETs for all others
                         .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
-
-                        // Authenticated methods
                         .requestMatchers(HttpMethod.POST, "/api/**").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/**").authenticated()
-
-                        // Catch-all fallback
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

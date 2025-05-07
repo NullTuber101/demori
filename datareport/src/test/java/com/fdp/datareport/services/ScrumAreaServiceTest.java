@@ -2,35 +2,37 @@ package com.fdp.datareport.services;
 
 import com.fdp.datareport.entities.ScrumArea;
 import com.fdp.datareport.repositories.ScrumAreaRepository;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.*;
 
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class ScrumAreaServiceTest {
 
-    @InjectMocks
-    private ScrumAreaService scrumAreaService;
-
     @Mock
     private ScrumAreaRepository scrumAreaRepository;
 
-    private AutoCloseable closeable;
+    @InjectMocks
+    private ScrumAreaService scrumAreaService;
 
     private ScrumArea sampleArea;
 
     @BeforeEach
     void setUp() {
-        closeable = MockitoAnnotations.openMocks(this);
-        sampleArea = new ScrumArea(1L, "Platform", "Alice", "Team Rocket", "B1234");
-    }
+        MockitoAnnotations.openMocks(this);
 
-    @AfterEach
-    void tearDown() throws Exception {
-        closeable.close();
+        sampleArea = new ScrumArea(
+                1L,
+                "Sample Area",
+                "Scrum Master",
+                "Team A",
+                "BOARD-123"
+        );
     }
 
     @Test
@@ -39,79 +41,81 @@ class ScrumAreaServiceTest {
 
         List<ScrumArea> result = scrumAreaService.getAllScrumAreas();
 
-        assertEquals(1, result.size());
-        assertEquals("Platform", result.get(0).getAreaName());
+        assertThat(result).hasSize(1).contains(sampleArea);
     }
 
     @Test
-    void testGetScrumAreaById_Found() {
+    void testGetScrumAreaById_whenFound() {
         when(scrumAreaRepository.findById(1L)).thenReturn(Optional.of(sampleArea));
 
         Optional<ScrumArea> result = scrumAreaService.getScrumAreaById(1L);
 
-        assertTrue(result.isPresent());
-        assertEquals("Alice", result.get().getScrumMaster());
+        assertThat(result).isPresent().contains(sampleArea);
     }
 
     @Test
-    void testGetScrumAreaById_NotFound() {
-        when(scrumAreaRepository.findById(2L)).thenReturn(Optional.empty());
+    void testGetScrumAreaById_whenNotFound() {
+        when(scrumAreaRepository.findById(99L)).thenReturn(Optional.empty());
 
-        Optional<ScrumArea> result = scrumAreaService.getScrumAreaById(2L);
+        Optional<ScrumArea> result = scrumAreaService.getScrumAreaById(99L);
 
-        assertFalse(result.isPresent());
+        assertThat(result).isEmpty();
     }
 
     @Test
     void testCreateScrumArea() {
-        when(scrumAreaRepository.save(any(ScrumArea.class))).thenReturn(sampleArea);
+        when(scrumAreaRepository.save(sampleArea)).thenReturn(sampleArea);
 
-        ScrumArea result = scrumAreaService.createScrumArea(sampleArea);
+        ScrumArea created = scrumAreaService.createScrumArea(sampleArea);
 
-        assertEquals("Team Rocket", result.getScrumTeam());
+        assertThat(created).isEqualTo(sampleArea);
     }
 
     @Test
-    void testUpdateScrumArea_Found() {
-        ScrumArea updated = new ScrumArea(null, "Data", "Bob", "Team Alpha", "B5678");
+    void testUpdateScrumArea_whenExists() {
+        ScrumArea updated = new ScrumArea(
+                1L,
+                "Updated Area",
+                "New Master",
+                "Team B",
+                "BOARD-456"
+        );
 
         when(scrumAreaRepository.findById(1L)).thenReturn(Optional.of(sampleArea));
-        when(scrumAreaRepository.save(any(ScrumArea.class))).thenReturn(updated);
+        when(scrumAreaRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         ScrumArea result = scrumAreaService.updateScrumArea(1L, updated);
 
-        assertEquals("Data", result.getAreaName());
-        assertEquals("Bob", result.getScrumMaster());
+        assertThat(result.getAreaName()).isEqualTo("Updated Area");
+        assertThat(result.getScrumTeam()).isEqualTo("Team B");
     }
 
     @Test
-    void testUpdateScrumArea_NotFound() {
-        ScrumArea updated = new ScrumArea(null, "Data", "Bob", "Team Alpha", "B5678");
+    void testUpdateScrumArea_whenNotFound() {
+        when(scrumAreaRepository.findById(99L)).thenReturn(Optional.empty());
 
-        when(scrumAreaRepository.findById(2L)).thenReturn(Optional.empty());
+        ScrumArea input = new ScrumArea(99L, "X", "Y", "Z", "B-99");
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () ->
-                scrumAreaService.updateScrumArea(2L, updated));
-
-        assertEquals("Scrum Area not found with id 2", ex.getMessage());
+        assertThatThrownBy(() -> scrumAreaService.updateScrumArea(99L, input))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Scrum Area not found with id");
     }
 
     @Test
-    void testDeleteScrumArea_Success() {
+    void testDeleteScrumArea_whenExists() {
         when(scrumAreaRepository.findById(1L)).thenReturn(Optional.of(sampleArea));
-        doNothing().when(scrumAreaRepository).delete(sampleArea);
 
-        assertDoesNotThrow(() -> scrumAreaService.deleteScrumArea(1L));
+        scrumAreaService.deleteScrumArea(1L);
+
         verify(scrumAreaRepository).delete(sampleArea);
     }
 
     @Test
-    void testDeleteScrumArea_NotFound() {
+    void testDeleteScrumArea_whenNotFound() {
         when(scrumAreaRepository.findById(99L)).thenReturn(Optional.empty());
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () ->
-                scrumAreaService.deleteScrumArea(99L));
-
-        assertEquals("Scrum Area not found with id 99", ex.getMessage());
+        assertThatThrownBy(() -> scrumAreaService.deleteScrumArea(99L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Scrum Area not found with id");
     }
 }

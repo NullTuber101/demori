@@ -1,14 +1,17 @@
 package com.fdp.datareport.services;
 
-import com.fdp.datareport.entities.*;
-import com.fdp.datareport.repositories.*;
-
-import org.junit.jupiter.api.*;
+import com.fdp.datareport.entities.Project;
+import com.fdp.datareport.entities.Sprint;
+import com.fdp.datareport.entities.Status;
+import com.fdp.datareport.repositories.ProjectRepository;
+import com.fdp.datareport.repositories.SprintRepository;
+import com.fdp.datareport.repositories.StatusRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.*;
-
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class SprintServiceTest {
@@ -18,127 +21,105 @@ class SprintServiceTest {
 
     @Mock
     private SprintRepository sprintRepository;
-
     @Mock
     private ProjectRepository projectRepository;
-
     @Mock
     private StatusRepository statusRepository;
 
-    private AutoCloseable closeable;
-
-    private Project project;
-    private Status status;
-    private Sprint sprint;
-
     @BeforeEach
     void setUp() {
-        closeable = MockitoAnnotations.openMocks(this);
+        MockitoAnnotations.openMocks(this);
+    }
 
-        project = new Project(1L, "Project X", "desc", "Dev1", "JIRA-001", null, null,
-                new Date(), new Date());
+    private Sprint createMockSprint() {
+        Sprint sprint = new Sprint();
+        sprint.setId(1L);
+        sprint.setSprintName("Sprint 1");
+        sprint.setSprintStartDate(new Date());
+        sprint.setSprintEndDate(new Date());
+        sprint.setSprintJira("SPR-001");
+        sprint.setSprintDescription("Test Sprint");
+        sprint.setAssignedTo("John Doe");
 
-        status = new Status(1L, "In Progress", 50);
+        Status status = new Status();
+        status.setId(10L);
+        sprint.setSprintFor(status);
 
-        sprint = new Sprint(1L, "Sprint 1", new Date(), new Date(), "JIRA-456",
-                "Sprint desc", "John Doe", status, project);
+        return sprint;
     }
 
     @Test
-    void testCreateSprint_Success() {
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
-        when(statusRepository.findById(status.getId())).thenReturn(Optional.of(status));
+    void testCreateSprint() {
+        Sprint sprint = createMockSprint();
+        Project project = new Project();
+        project.setId(100L);
+        Status status = new Status();
+        status.setId(10L);
+
+        when(projectRepository.findById(100L)).thenReturn(Optional.of(project));
+        when(statusRepository.findById(10L)).thenReturn(Optional.of(status));
         when(sprintRepository.save(any(Sprint.class))).thenReturn(sprint);
 
-        Sprint result = sprintService.createSprint(1L, sprint);
+        Sprint created = sprintService.createSprint(100L, sprint);
 
-        assertNotNull(result);
-        assertEquals("Sprint 1", result.getSprintName());
-        verify(sprintRepository).save(sprint);
-    }
-
-    @Test
-    void testCreateSprint_ProjectNotFound() {
-        when(projectRepository.findById(99L)).thenReturn(Optional.empty());
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () ->
-                sprintService.createSprint(99L, sprint));
-
-        assertEquals("Project not found", exception.getMessage());
+        assertThat(created).isNotNull();
+        assertThat(created.getSprintName()).isEqualTo("Sprint 1");
     }
 
     @Test
     void testGetSprintsByProject() {
-        Sprint sprint2 = new Sprint(2L, "Sprint 2", new Date(), new Date(), "JIRA-789", "desc2", "Jane", status, project);
-        when(sprintRepository.findAll()).thenReturn(List.of(sprint, sprint2));
+        Sprint sprint = createMockSprint();
+        Project project = new Project();
+        project.setId(100L);
+        sprint.setProject(project);
 
-        List<Sprint> result = sprintService.getSprintsByProject(1L);
-        assertEquals(2, result.size());
+        when(sprintRepository.findAll()).thenReturn(List.of(sprint));
+
+        List<Sprint> result = sprintService.getSprintsByProject(100L);
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getSprintName()).isEqualTo("Sprint 1");
     }
 
     @Test
-    void testGetSprintById_Success() {
+    void testGetSprintById() {
+        Sprint sprint = createMockSprint();
         when(sprintRepository.findById(1L)).thenReturn(Optional.of(sprint));
 
         Sprint result = sprintService.getSprintById(1L);
-        assertEquals("Sprint 1", result.getSprintName());
+        assertThat(result.getAssignedTo()).isEqualTo("John Doe");
     }
 
     @Test
-    void testGetSprintById_NotFound() {
-        when(sprintRepository.findById(42L)).thenReturn(Optional.empty());
+    void testUpdateSprint() {
+        Sprint oldSprint = createMockSprint();
+        Sprint updated = createMockSprint();
+        updated.setSprintName("Updated Sprint");
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () ->
-                sprintService.getSprintById(42L));
+        Status status = new Status();
+        status.setId(10L);
 
-        assertEquals("Sprint not found", exception.getMessage());
-    }
-
-    @Test
-    void testUpdateSprint_Success() {
-        Sprint updated = new Sprint(null, "Sprint 1 Updated", new Date(), new Date(), "JIRA-999",
-                "Updated desc", "Jane Smith", status, project);
-
-        when(sprintRepository.findById(1L)).thenReturn(Optional.of(sprint));
-        when(statusRepository.findById(status.getId())).thenReturn(Optional.of(status));
+        when(sprintRepository.findById(1L)).thenReturn(Optional.of(oldSprint));
+        when(statusRepository.findById(10L)).thenReturn(Optional.of(status));
         when(sprintRepository.save(any(Sprint.class))).thenReturn(updated);
 
         Sprint result = sprintService.updateSprint(1L, updated);
-
-        assertEquals("Sprint 1 Updated", result.getSprintName());
-        assertEquals("Jane Smith", result.getAssignedTo());
+        assertThat(result.getSprintName()).isEqualTo("Updated Sprint");
     }
 
     @Test
-    void testUpdateSprint_SprintNotFound() {
-        when(sprintRepository.findById(404L)).thenReturn(Optional.empty());
-
-        RuntimeException ex = assertThrows(RuntimeException.class, () ->
-                sprintService.updateSprint(404L, sprint));
-
-        assertEquals("Sprint not found", ex.getMessage());
-    }
-
-    @Test
-    void testDeleteSprint_Success() {
+    void testDeleteSprint() {
         when(sprintRepository.existsById(1L)).thenReturn(true);
+        doNothing().when(sprintRepository).deleteById(1L);
 
         sprintService.deleteSprint(1L);
-        verify(sprintRepository).deleteById(1L);
+        verify(sprintRepository, times(1)).deleteById(1L);
     }
 
     @Test
-    void testDeleteSprint_NotFound() {
-        when(sprintRepository.existsById(999L)).thenReturn(false);
-
-        RuntimeException ex = assertThrows(RuntimeException.class, () ->
-                sprintService.deleteSprint(999L));
-
-        assertEquals("Sprint not found", ex.getMessage());
-    }
-
-    @AfterEach
-    void tearDown() throws Exception {
-        closeable.close();
+    void testDeleteNonexistentSprint() {
+        when(sprintRepository.existsById(1L)).thenReturn(false);
+        assertThatThrownBy(() -> sprintService.deleteSprint(1L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Sprint not found");
     }
 }

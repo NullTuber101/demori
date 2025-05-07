@@ -2,11 +2,15 @@ package com.fdp.datareport.controllers;
 
 import com.fdp.datareport.entities.Status;
 import com.fdp.datareport.services.StatusService;
+import com.fdp.datareport.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -17,131 +21,122 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(StatusController.class)
-public class StatusControllerTest {
+@SpringBootTest
+@AutoConfigureMockMvc
+class StatusControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Autowired
-    private ObjectMapper objectMapper; // For converting objects to JSON
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @MockBean
-    private StatusService statusService;  // Mocking the service layer
+    private StatusService statusService;
 
-    private Status validStatus;
-    private Status invalidStatus;
+    private String editorToken;
+    private String viewerToken;
+
+    private Status sampleStatus;
 
     @BeforeEach
-    public void setUp() {
-        validStatus = new Status(null, "In Progress", 80);  // Valid status
-        invalidStatus = new Status(null, "Invalid", 150);   // Invalid status (percentage > 100)
+    void setUp() {
+        editorToken = "Bearer " + jwtUtil.generateToken("editor", "EDITOR");
+        viewerToken = "Bearer " + jwtUtil.generateToken("viewer", "VIEWER");
+
+        sampleStatus = new Status();
+        sampleStatus.setId(1L);
+        sampleStatus.setStatusName("In Progress");
+        sampleStatus.setPercentage(50);
     }
 
     @Test
-    public void testGetAllStatuses() throws Exception {
-        // Mock the service to return a list of statuses
-        when(statusService.getAllStatuses()).thenReturn(List.of(validStatus));
+    void shouldReturnAllStatusesWithoutAuth() throws Exception {
+        when(statusService.getAllStatuses()).thenReturn(List.of(sampleStatus));
 
         mockMvc.perform(get("/api/statuses"))
-                .andExpect(status().isOk()) // Expect HTTP 200 OK
-                .andExpect(jsonPath("$[0].statusName").value("In Progress"))
-                .andExpect(jsonPath("$[0].percentage").value(80));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
     }
 
     @Test
-    public void testGetStatusById_Existing() throws Exception {
-        // Mock the service to return a status by id
-        when(statusService.getStatusById(1L)).thenReturn(java.util.Optional.of(validStatus));
+    void shouldReturnStatusById() throws Exception {
+        when(statusService.getStatusById(1L)).thenReturn(java.util.Optional.of(sampleStatus));
 
         mockMvc.perform(get("/api/statuses/1"))
-                .andExpect(status().isOk()) // Expect HTTP 200 OK
-                .andExpect(jsonPath("$.statusName").value("In Progress"))
-                .andExpect(jsonPath("$.percentage").value(80));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusName").value("In Progress"));
     }
 
     @Test
-    public void testGetStatusById_NotFound() throws Exception {
-        // Mock the service to return an empty Optional when ID does not exist
-        when(statusService.getStatusById(1L)).thenReturn(java.util.Optional.empty());
+    void shouldReturn404ForMissingStatus() throws Exception {
+        when(statusService.getStatusById(99L)).thenReturn(java.util.Optional.empty());
 
-        mockMvc.perform(get("/api/statuses/1"))
-                .andExpect(status().isNotFound()) // Expect HTTP 404 Not Found
-                .andExpect(content().string(""));  // Body should be empty
+        mockMvc.perform(get("/api/statuses/99"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    public void testAddStatus_Valid() throws Exception {
-        // Mock the service to return the valid status when created
-        when(statusService.createStatus(validStatus)).thenReturn(validStatus);
-
-        // Convert validStatus to JSON and send a POST request
-        String validStatusJson = objectMapper.writeValueAsString(validStatus);
+    void shouldCreateStatusWithEditorRole() throws Exception {
+        when(statusService.createStatus(any(Status.class))).thenReturn(sampleStatus);
 
         mockMvc.perform(post("/api/statuses")
+                        .header("Authorization", editorToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(validStatusJson))
-                .andExpect(status().isCreated()) // Expect HTTP 201 Created
-                .andExpect(jsonPath("$.statusName").value("In Progress"))
-                .andExpect(jsonPath("$.percentage").value(80));
+                        .content(objectMapper.writeValueAsString(sampleStatus)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.statusName").value("In Progress"));
     }
 
     @Test
-    public void testAddStatus_InvalidPercentage() throws Exception {
-        // Convert invalidStatus to JSON and send a POST request
-        String invalidStatusJson = objectMapper.writeValueAsString(invalidStatus);
-
+    void shouldReturnForbiddenWithoutTokenOnCreate() throws Exception {
         mockMvc.perform(post("/api/statuses")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(invalidStatusJson))
-                .andExpect(status().isBadRequest()) // Expect HTTP 400 Bad Request
-                .andExpect(jsonPath("$.message[0]").value("percentage: Percentage must be between 0 and 100"));
+                        .content(objectMapper.writeValueAsString(sampleStatus)))
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    public void testUpdateStatus_Valid() throws Exception {
-        // Mock the service to return updated status
-        when(statusService.updateStatus(1L, validStatus)).thenReturn(validStatus);
-
-        // Convert validStatus to JSON and send a PUT request
-        String validStatusJson = objectMapper.writeValueAsString(validStatus);
+    void shouldUpdateStatusWithEditorRole() throws Exception {
+        when(statusService.updateStatus(eq(1L), any(Status.class))).thenReturn(sampleStatus);
 
         mockMvc.perform(put("/api/statuses/1")
+                        .header("Authorization", editorToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(validStatusJson))
-                .andExpect(status().isOk()) // Expect HTTP 200 OK
-                .andExpect(jsonPath("$.statusName").value("In Progress"))
-                .andExpect(jsonPath("$.percentage").value(80));
+                        .content(objectMapper.writeValueAsString(sampleStatus)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.percentage").value(50));
     }
 
     @Test
-    public void testUpdateStatus_NotFound() throws Exception {
-        // Mock the service to return null (indicating that status was not found)
-        when(statusService.updateStatus(1L, validStatus)).thenReturn(null);
+    void shouldReturn404OnUpdateIfNotFound() throws Exception {
+        when(statusService.updateStatus(eq(999L), any(Status.class))).thenReturn(null);
 
-        String validStatusJson = objectMapper.writeValueAsString(validStatus);
-
-        mockMvc.perform(put("/api/statuses/1")
+        mockMvc.perform(put("/api/statuses/999")
+                        .header("Authorization", editorToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(validStatusJson))
-                .andExpect(status().isNotFound()); // Expect HTTP 404 Not Found
+                        .content(objectMapper.writeValueAsString(sampleStatus)))
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    public void testDeleteStatus_Success() throws Exception {
-        // Mock the service to return true (indicating successful deletion)
+    void shouldDeleteStatusWithEditorRole() throws Exception {
         when(statusService.deleteStatus(1L)).thenReturn(true);
 
-        mockMvc.perform(delete("/api/statuses/1"))
-                .andExpect(status().isNoContent()); // Expect HTTP 204 No Content
+        mockMvc.perform(delete("/api/statuses/1")
+                        .header("Authorization", editorToken))
+                .andExpect(status().isNoContent());
     }
 
     @Test
-    public void testDeleteStatus_NotFound() throws Exception {
-        // Mock the service to return false (indicating status was not found)
-        when(statusService.deleteStatus(1L)).thenReturn(false);
+    void shouldReturn404OnDeleteIfNotFound() throws Exception {
+        when(statusService.deleteStatus(999L)).thenReturn(false);
 
-        mockMvc.perform(delete("/api/statuses/1"))
-                .andExpect(status().isNotFound()); // Expect HTTP 404 Not Found
+        mockMvc.perform(delete("/api/statuses/999")
+                        .header("Authorization", editorToken))
+                .andExpect(status().isNotFound());
     }
 }

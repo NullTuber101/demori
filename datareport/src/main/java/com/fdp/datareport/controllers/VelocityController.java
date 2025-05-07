@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+
 @RestController
 @RequestMapping("/api/velocities")
 @CrossOrigin(origins = "*")
@@ -37,20 +38,34 @@ public class VelocityController {
     // Protected POST/PUT/DELETE
     @PostMapping("/{areaId}")
     @PreAuthorize("hasAnyRole('SUPER_USER', 'EDITOR')")
-    public ResponseEntity<Velocity> createVelocity(@PathVariable Long areaId, @Valid @RequestBody Velocity velocity) {
-        return ResponseEntity.ok(velocityService.createVelocity(areaId, velocity));
+    public ResponseEntity<Object> createVelocity(@PathVariable Long areaId, @Valid @RequestBody Velocity velocity) {
+        try {
+            Velocity created = velocityService.createVelocity(areaId, velocity);
+            return ResponseEntity.ok(created);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to create velocity: " + e.getMessage()));
+        }
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPER_USER', 'EDITOR')")
-    public ResponseEntity<Velocity> updateVelocity(@PathVariable Long id, @Valid @RequestBody Velocity velocity) {
-        return ResponseEntity.ok(velocityService.updateVelocity(id, velocity));
+    public ResponseEntity<Object> updateVelocity(@PathVariable Long id, @Valid @RequestBody Velocity velocity) {
+        try {
+            Velocity updated = velocityService.updateVelocity(id, velocity);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to update velocity: " + e.getMessage()));
+        }
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPER_USER', 'EDITOR')")
-    public ResponseEntity<Void> deleteVelocity(@PathVariable Long id) {
-        velocityService.deleteVelocity(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Object> deleteVelocity(@PathVariable Long id) {
+        try {
+            velocityService.deleteVelocity(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to delete velocity: " + e.getMessage()));
+        }
     }
 }

@@ -9,51 +9,61 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public class AreaTest {
+class AreaTest {
 
     private Validator validator;
 
     @BeforeEach
-    public void setup() {
+    void setupValidator() {
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
     }
 
     @Test
-    public void testValidArea() {
-        Area area = new Area(1L, "Development", "John Doe", "john.doe@example.com");
+    void testValidArea() {
+        Area area = new Area(1L, "Test Area", "Test Name", "test@example.com");
 
         Set<ConstraintViolation<Area>> violations = validator.validate(area);
-        assertTrue(violations.isEmpty(), "No violations should occur for a valid Area");
+
+        assertThat(violations).isEmpty();
     }
 
     @Test
-    public void testNullName() {
-        Area area = new Area(1L, null, "John Doe", "john.doe@example.com");
+    void testNullNameShouldFailValidation() {
+        Area area = new Area(1L, null, "Test Name", "test@example.com");
 
         Set<ConstraintViolation<Area>> violations = validator.validate(area);
-        assertEquals(1, violations.size());
-        assertEquals("Name is required", violations.iterator().next().getMessage());
+
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("name"));
     }
 
     @Test
-    public void testNullLeadName() {
-        Area area = new Area(1L, "Development", null, "john.doe@example.com");
+    void testNullLeadNameShouldFailValidation() {
+        Area area = new Area(1L, "Test Area", null, "test@example.com");
 
         Set<ConstraintViolation<Area>> violations = validator.validate(area);
-        assertEquals(1, violations.size());
-        assertEquals("Lead Name is required", violations.iterator().next().getMessage());
+
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("leadName"));
     }
 
     @Test
-    public void testNullLeadEmail() {
-        Area area = new Area(1L, "Development", "John Doe", null);
+    void testNullLeadEmailShouldFailValidation() {
+        Area area = new Area(1L, "Test Area", "Test Name", null);
 
         Set<ConstraintViolation<Area>> violations = validator.validate(area);
-        assertEquals(1, violations.size());
-        assertEquals("Lead Email is required", violations.iterator().next().getMessage());
+
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("leadEmail"));
+    }
+
+    @Test
+    void testLombokGeneratedMethods() {
+        Area area1 = new Area(1L, "Test Area", "Test Name", "test@example.com");
+        Area area2 = new Area(1L, "Test Area", "Test Name", "test@example.com");
+
+        assertThat(area1).isEqualTo(area2);
+        assertThat(area1.hashCode()).isEqualTo(area2.hashCode());
+        assertThat(area1.toString()).contains("Test Area");
     }
 }

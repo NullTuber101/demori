@@ -1,27 +1,33 @@
 package com.fdp.datareport.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fdp.datareport.config.SecurityConfig;
 import com.fdp.datareport.entities.Area;
+import com.fdp.datareport.filters.JwtAuthFilter;
 import com.fdp.datareport.services.AreaService;
+import com.fdp.datareport.util.JwtUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(AreaController.class)
-class AreaControllerTest {
+@WebMvcTest(controllers = AreaController.class)
+@Import({SecurityConfig.class, JwtAuthFilter.class, JwtUtil.class})
+public class AreaControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -32,75 +38,87 @@ class AreaControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private Area sampleArea;
+    private Area area;
 
     @BeforeEach
-    void setUp() {
-        sampleArea = new Area(1L, "Engineering", "Alice Smith", "alice@example.com");
+    void setup() {
+        area = new Area(1L, "Engineering", "Alice", "alice@test.com");
     }
 
     @Test
     void testGetAllAreas() throws Exception {
-        Mockito.when(areaService.getAllAreas()).thenReturn(List.of(sampleArea));
+        Mockito.when(areaService.getAllAreas()).thenReturn(List.of(area));
 
         mockMvc.perform(get("/api/areas"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Engineering"))
-                .andExpect(jsonPath("$[0].leadName").value("Alice Smith"))
-                .andExpect(jsonPath("$[0].leadEmail").value("alice@example.com"));
+                .andExpect(jsonPath("$[0].name").value("Engineering"));
     }
 
     @Test
-    void testGetAreaById_Found() throws Exception {
-        Mockito.when(areaService.getAreaById(1L)).thenReturn(Optional.of(sampleArea));
+    void testGetAreaByIdFound() throws Exception {
+        Mockito.when(areaService.getAreaById(1L)).thenReturn(Optional.of(area));
 
         mockMvc.perform(get("/api/areas/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Engineering"));
+                .andExpect(jsonPath("$.leadName").value("Alice"));
     }
 
     @Test
-    void testGetAreaById_NotFound() throws Exception {
-        Mockito.when(areaService.getAreaById(999L)).thenReturn(Optional.empty());
+    void testGetAreaByIdNotFound() throws Exception {
+        Mockito.when(areaService.getAreaById(1L)).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/api/areas/999"))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/areas/1"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Area not found"));
     }
 
     @Test
-    void testAddArea() throws Exception {
-        Mockito.when(areaService.addArea(any(Area.class))).thenReturn(sampleArea);
+    @WithMockUser(roles = {"EDITOR"})
+    void testAddAreaAuthorized() throws Exception {
+        Mockito.when(areaService.addArea(any(Area.class))).thenReturn(area);
 
         mockMvc.perform(post("/api/areas")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(sampleArea)))
+                        .content(objectMapper.writeValueAsString(area)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Engineering"));
+                .andExpect(jsonPath("$.leadEmail").value("alice@test.com"));
     }
 
     @Test
-    void testUpdateArea_Found() throws Exception {
-        Mockito.when(areaService.updateArea(eq(1L), any(Area.class))).thenReturn(sampleArea);
+    void testAddAreaUnauthorized() throws Exception {
+        mockMvc.perform(post("/api/areas")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(area)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = {"SUPER_USER"})
+    void testUpdateAreaSuccess() throws Exception {
+        Mockito.when(areaService.updateArea(Mockito.eq(1L), any(Area.class))).thenReturn(area);
 
         mockMvc.perform(put("/api/areas/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(sampleArea)))
+                        .content(objectMapper.writeValueAsString(area)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Engineering"));
     }
 
     @Test
-    void testUpdateArea_NotFound() throws Exception {
-        Mockito.when(areaService.updateArea(eq(999L), any(Area.class))).thenReturn(null);
+    @WithMockUser(roles = {"SUPER_USER"})
+    void testUpdateAreaNotFound() throws Exception {
+        Mockito.when(areaService.updateArea(Mockito.eq(1L), any(Area.class))).thenReturn(null);
 
-        mockMvc.perform(put("/api/areas/999")
+        mockMvc.perform(put("/api/areas/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(sampleArea)))
-                .andExpect(status().isNotFound());
+                        .content(objectMapper.writeValueAsString(area)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Area not found"));
     }
 
     @Test
-    void testDeleteArea_Found() throws Exception {
+    @WithMockUser(roles = {"EDITOR"})
+    void testDeleteAreaSuccess() throws Exception {
         Mockito.when(areaService.deleteArea(1L)).thenReturn(true);
 
         mockMvc.perform(delete("/api/areas/1"))
@@ -108,10 +126,12 @@ class AreaControllerTest {
     }
 
     @Test
-    void testDeleteArea_NotFound() throws Exception {
-        Mockito.when(areaService.deleteArea(999L)).thenReturn(false);
+    @WithMockUser(roles = {"EDITOR"})
+    void testDeleteAreaNotFound() throws Exception {
+        Mockito.when(areaService.deleteArea(1L)).thenReturn(false);
 
-        mockMvc.perform(delete("/api/areas/999"))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(delete("/api/areas/1"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Area not found"));
     }
 }
