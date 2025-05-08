@@ -95,9 +95,11 @@ export class LoginSignupComponent {
         this.router.navigate(['/']).then(() => location.reload());
       },
       error: (err) => {
-        const msg = err?.error?.message || err?.error || 'Invalid BRID or password.';
+        console.log(err);
+        const msg = err?.error?.error || err?.error || 'Invalid BRID or password.';
         this.openAlert('error', 'Login Failed', msg);
       }
+
     });
   }
 

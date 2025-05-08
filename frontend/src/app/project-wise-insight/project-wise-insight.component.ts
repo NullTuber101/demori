@@ -104,6 +104,9 @@ export class ProjectWiseInsightComponent implements OnInit {
       }
     }
   }
+    compareById(a: any, b: any): boolean {
+    return a && b && a.id === b.id;
+  }
 
   loadProjectName(): void {
     this.projectService.getProjectById(this.projectId).subscribe({
@@ -191,9 +194,11 @@ export class ProjectWiseInsightComponent implements OnInit {
           this.openAlert('success', 'Success', 'Sprint updated successfully!');
         },
         error: (err) => {
-          const message = err.error.message[0].split(":")[1]?.trim() || "";
+          const rawMsg = err?.error?.error || err?.error?.message || 'Unknown error';
+          const message = typeof rawMsg === 'string' ? rawMsg : JSON.stringify(rawMsg);
           this.openAlert('error', 'Update Error', message);
-        }
+      }
+
       });
     } else {
       this.openAlert('error', 'Validation Error', 'Please fix the errors before saving.');

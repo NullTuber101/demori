@@ -42,9 +42,8 @@
 
                     <mat-form-field appearance="outline" class="full-width">
                         <mat-label>Status</mat-label>
-                        <mat-select formControlName="sprintFor">
-                            <mat-option *ngFor="let status of statusList" [value]="status">{{ status.statusName
-                                }}</mat-option>
+                        <mat-select formControlName="sprintFor" [compareWith]="compareById">
+                            <mat-option *ngFor="let status of statusList" [value]="status">{{ status.statusName }}</mat-option>
                         </mat-select>
                     </mat-form-field>
                 </mat-card-content>
@@ -134,11 +133,13 @@
 
                         <mat-form-field appearance="outline" class="full-width">
                             <mat-label>Status</mat-label>
-                            <mat-select formControlName="sprintFor">
-                                <mat-option *ngFor="let status of statusList" [value]="status.id">{{ status.statusName
-                                    }}</mat-option>
+                            <mat-select formControlName="sprintFor" [compareWith]="compareById">
+                                <mat-option *ngFor="let status of statusList" [value]="status">
+                                    {{ status.statusName }}
+                                </mat-option>
                             </mat-select>
                         </mat-form-field>
+
 
                         <mat-card-actions align="end">
                             <button mat-raised-button color="primary" type="submit"
