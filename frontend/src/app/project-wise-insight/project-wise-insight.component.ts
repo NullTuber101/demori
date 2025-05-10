@@ -151,6 +151,8 @@ export class ProjectWiseInsightComponent implements OnInit {
         next: (newSprint) => {
           this.sprints = [...this.sprints, newSprint];
           this.sprintForm.reset();
+          this.sprintForm.markAsPristine();
+          this.sprintForm.markAsUntouched();
           this.openAlert('success', 'Success', 'Sprint added successfully!');
         },
         error: (err) => {

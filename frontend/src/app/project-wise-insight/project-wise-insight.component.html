@@ -1,137 +1,157 @@
 <h2 class="project-title">Project: {{ projectName }}</h2>
-<div class="container">
-    <!-- 🔹 Left Side: Add Form -->
-    <div class="left-form">
-        <form [formGroup]="sprintForm" (ngSubmit)="addSprint()" class="form-container">
-            <mat-card>
-                <mat-card-title>Add New Sprint</mat-card-title>
-                <mat-card-content>
-                    <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Sprint Name</mat-label>
-                        <input matInput formControlName="sprintName" />
-                    </mat-form-field>
 
-                    <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Sprint Start Date</mat-label>
-                        <input matInput [matDatepicker]="picker1" formControlName="sprintStartDate" />
-                        <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
-                        <mat-datepicker #picker1></mat-datepicker>
-                    </mat-form-field>
+<div class="layout">
+    <!-- Left: Form -->
+    <section class="form-section">
+        <form [formGroup]="sprintForm" (ngSubmit)="addSprint()" class="form-box">
+            <h3>Add New Sprint</h3>
 
-                    <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Sprint End Date</mat-label>
-                        <input matInput [matDatepicker]="picker2" formControlName="sprintEndDate" />
-                        <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
-                        <mat-datepicker #picker2></mat-datepicker>
-                    </mat-form-field>
+            <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Sprint Name</mat-label>
+                <input matInput formControlName="sprintName" />
+            </mat-form-field>
 
-                    <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Sprint JIRA</mat-label>
-                        <textarea matInput formControlName="sprintJira"></textarea>
-                    </mat-form-field>
+            <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Start Date</mat-label>
+                <input matInput [matDatepicker]="picker1" formControlName="sprintStartDate" />
+                <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+                <mat-datepicker #picker1></mat-datepicker>
+            </mat-form-field>
 
-                    <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Sprint Description</mat-label>
-                        <textarea matInput formControlName="sprintDescription"></textarea>
-                    </mat-form-field>
+            <mat-form-field appearance="outline" class="form-field">
+                <mat-label>End Date</mat-label>
+                <input matInput [matDatepicker]="picker2" formControlName="sprintEndDate" />
+                <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+                <mat-datepicker #picker2></mat-datepicker>
+            </mat-form-field>
 
-                    <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Assigned To</mat-label>
-                        <textarea matInput formControlName="assignedTo"></textarea>
-                    </mat-form-field>
+            <mat-form-field appearance="outline" class="form-field">
+                <mat-label>JIRA</mat-label>
+                <textarea matInput formControlName="sprintJira"></textarea>
+            </mat-form-field>
 
-                    <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Status</mat-label>
-                        <mat-select formControlName="sprintFor" [compareWith]="compareById">
-                            <mat-option *ngFor="let status of statusList" [value]="status">{{ status.statusName }}</mat-option>
-                        </mat-select>
-                    </mat-form-field>
-                </mat-card-content>
-                <mat-card-actions>
-                    <button mat-raised-button color="primary" type="submit"
-                        [disabled]="sprintForm.invalid || !isLoggedIn || userRole === 'VIEWER'">Submit</button>
-                </mat-card-actions>
-            </mat-card>
+            <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Description</mat-label>
+                <textarea matInput formControlName="sprintDescription"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Assigned To</mat-label>
+                <textarea matInput formControlName="assignedTo"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Status</mat-label>
+                <mat-select formControlName="sprintFor" [compareWith]="compareById">
+                    <mat-option *ngFor="let status of statusList" [value]="status">
+                        {{ status.statusName }}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <button mat-flat-button color="primary" type="submit"
+                [disabled]="sprintForm.invalid || userRole === 'VIEWER'">
+                Add Sprint
+            </button>
         </form>
 
-        <!-- 🔘 Toggle Chart Button -->
-        <div style="margin-top: 16px; text-align: left;">
-            <button mat-stroked-button color="accent" (click)="showChart = !showChart">
+        <div class="chart-toggle">
+            <button mat-stroked-button (click)="showChart = !showChart">
                 {{ showChart ? 'Hide' : 'Show' }} Project Progress
             </button>
         </div>
 
-        <!-- 📈 Chart Display -->
-        <div *ngIf="showChart" style="margin-top: 24px;">
+        <div *ngIf="showChart" class="chart-box">
             <app-sprint-progress-chart [sprints]="sprints"></app-sprint-progress-chart>
         </div>
-    </div>
+    </section>
 
-    <!-- 🔸 Right Side: Sprint Cards -->
-    <div class="right-list">
-        <h3>List of Sprints:</h3>
+    <!-- Right: Sprint List -->
+    <section class="list-section">
+        <h3>Sprint List</h3>
 
-        <div *ngFor="let sprint of sprints; let i = index" class="sprint-card">
-            <mat-card>
-                <ng-container *ngIf="editIndex !== i; else editCard">
-                    <mat-card-title>{{ sprint.sprintName }}</mat-card-title>
-                    <mat-card-content>
-                        <p><strong>Start:</strong> {{ sprint.sprintStartDate | date }}</p>
-                        <p><strong>End:</strong> {{ sprint.sprintEndDate | date }}</p>
-                        <p><strong>JIRA:</strong> {{ sprint.sprintJira }}</p>
-                        <p><strong>Description:</strong> {{ sprint.sprintDescription }}</p>
-                        <p><strong>Assigned To:</strong> {{ sprint.assignedTo }}</p>
-                        <p><strong>Status:</strong> {{ sprint.sprintFor?.statusName }}</p>
-                    </mat-card-content>
-                    <mat-card-actions align="end">
-                        <button mat-icon-button color="primary" (click)="enableEdit(i)"
-                            [disabled]="!isLoggedIn || userRole === 'VIEWER'">
+        <div class="sprint-list">
+            <div *ngFor="let sprint of sprints; let i = index" class="sprint-card">
+                <ng-container *ngIf="editIndex !== i; else editMode">
+                    <h4>{{ sprint.sprintName }}</h4>
+                    
+                    <div class="sprint-row">
+                        <span class="sprint-label">Start:</span>
+                        <div class="sprint-value">{{ sprint.sprintStartDate | date }}</div>
+                    </div>
+                    
+                    <div class="sprint-row">
+                        <span class="sprint-label">End:</span>
+                        <div class="sprint-value">{{ sprint.sprintEndDate | date }}</div>
+                    </div>
+                    
+                    <div class="sprint-row">
+                        <span class="sprint-label">JIRA:</span>
+                        <div class="sprint-value">{{ sprint.sprintJira }}</div>
+                    </div>
+                    
+                    <div class="sprint-row">
+                        <span class="sprint-label">Description:</span>
+                        <div class="sprint-value">{{ sprint.sprintDescription }}</div>
+                    </div>
+                    
+                    <div class="sprint-row">
+                        <span class="sprint-label">Assigned:</span>
+                        <div class="sprint-value">{{ sprint.assignedTo }}</div>
+                    </div>
+                    
+                    <div class="sprint-row">
+                        <span class="sprint-label">Status:</span>
+                        <div class="sprint-value">{{ sprint.sprintFor?.statusName }}</div>
+                    </div>
+
+                    <div class="action-bar">
+                        <button mat-icon-button color="primary" (click)="enableEdit(i)">
                             <mat-icon>edit</mat-icon>
                         </button>
-                        <button mat-icon-button color="warn" (click)="confirmDelete(i)"
-                            [disabled]="!isLoggedIn || userRole === 'VIEWER'">
+                        <button mat-icon-button color="warn" (click)="confirmDelete(i)">
                             <mat-icon>delete</mat-icon>
                         </button>
-                    </mat-card-actions>
+                    </div>
                 </ng-container>
 
-                <ng-template #editCard>
+                <ng-template #editMode>
                     <form [formGroup]="editForm" (ngSubmit)="saveEdit(i)" class="edit-form">
-                        <mat-form-field appearance="outline" class="full-width">
+                        <mat-form-field appearance="outline" class="form-field">
                             <mat-label>Sprint Name</mat-label>
                             <input matInput formControlName="sprintName" />
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="full-width">
-                            <mat-label>Sprint Start Date</mat-label>
+                        <mat-form-field appearance="outline" class="form-field">
+                            <mat-label>Start Date</mat-label>
                             <input matInput [matDatepicker]="editPicker1" formControlName="sprintStartDate" />
                             <mat-datepicker-toggle matSuffix [for]="editPicker1"></mat-datepicker-toggle>
                             <mat-datepicker #editPicker1></mat-datepicker>
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="full-width">
-                            <mat-label>Sprint End Date</mat-label>
+                        <mat-form-field appearance="outline" class="form-field">
+                            <mat-label>End Date</mat-label>
                             <input matInput [matDatepicker]="editPicker2" formControlName="sprintEndDate" />
                             <mat-datepicker-toggle matSuffix [for]="editPicker2"></mat-datepicker-toggle>
                             <mat-datepicker #editPicker2></mat-datepicker>
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="full-width">
-                            <mat-label>Sprint JIRA</mat-label>
+                        <mat-form-field appearance="outline" class="form-field">
+                            <mat-label>JIRA</mat-label>
                             <textarea matInput formControlName="sprintJira"></textarea>
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="full-width">
-                            <mat-label>Sprint Description</mat-label>
+                        <mat-form-field appearance="outline" class="form-field">
+                            <mat-label>Description</mat-label>
                             <textarea matInput formControlName="sprintDescription"></textarea>
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="full-width">
+                        <mat-form-field appearance="outline" class="form-field">
                             <mat-label>Assigned To</mat-label>
                             <textarea matInput formControlName="assignedTo"></textarea>
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="full-width">
+                        <mat-form-field appearance="outline" class="form-field">
                             <mat-label>Status</mat-label>
                             <mat-select formControlName="sprintFor" [compareWith]="compareById">
                                 <mat-option *ngFor="let status of statusList" [value]="status">
@@ -140,16 +160,14 @@
                             </mat-select>
                         </mat-form-field>
 
-
-                        <mat-card-actions align="end">
-                            <button mat-raised-button color="primary" type="submit"
-                                [disabled]="editForm.invalid || !isLoggedIn || userRole === 'VIEWER'">Save</button>
-                            <button mat-button type="button" (click)="cancelEdit()">Cancel</button>
-                        </mat-card-actions>
+                        <div class="action-bar">
+                            <button mat-flat-button color="primary" type="submit">Save</button>
+                            <button mat-stroked-button color="basic" type="button"
+                                (click)="cancelEdit()">Cancel</button>
+                        </div>
                     </form>
                 </ng-template>
-
-            </mat-card>
+            </div>
         </div>
-    </div>
+    </section>
 </div>
