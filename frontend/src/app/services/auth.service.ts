@@ -6,6 +6,9 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class AuthService {
+  redirectToLogin(redirectToLogin: any) {
+      throw new Error('Method not implemented.');
+  }
   private baseUrl = 'http://localhost:8080/api';
 
   constructor(private http: HttpClient) {}

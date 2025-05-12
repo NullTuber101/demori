@@ -71,35 +71,45 @@ export class VelocityPlotComponent implements OnInit {
 
   prepareChartData(data: any[]): void {
     const labels: string[] = [];
-    const sprintMap = new Map<string, number[]>();
     const sprintLabels = ['Sprint 1', 'Sprint 2', 'Sprint 3'];
+    const sprintMap = new Map<string, (number | undefined)[]>();
     sprintLabels.forEach(label => sprintMap.set(label, []));
 
     data.forEach((area: any) => {
       labels.push(area.scrumAreaName);
+
       const sorted = area.velocities
-        .sort((a: any, b: any) => new Date(b.sprintEndDate).getTime() - new Date(a.sprintEndDate).getTime())
+        .sort((a: any, b: any) => new Date(a.sprintEndDate).getTime() - new Date(b.sprintEndDate).getTime())
         .slice(0, 3);
-      sorted.forEach((v: any, i: number) => sprintMap.get(sprintLabels[i])?.push(v.velocity ?? 0));
+
+      sprintLabels.forEach((label, i) => {
+        const velocity = sorted[i]?.velocity;
+        sprintMap.get(label)?.push(velocity !== undefined ? velocity : undefined);
+      });
     });
 
-    const avgVelocities = labels.map((_, i) => {
+    const avgVelocities: number[] = [];
+    for (let i = 0; i < labels.length; i++) {
       let total = 0, count = 0;
-      sprintMap.forEach(arr => {
-        const val = arr[i];
+      sprintLabels.forEach(label => {
+        const val = sprintMap.get(label)?.[i];
         if (val !== undefined) {
           total += val;
           count++;
         }
       });
-      return count === 0 ? 0 : +(total / count).toFixed(2);
-    });
+      avgVelocities.push(count === 0 ? 0 : +(total / count).toFixed(2));
+    }
+
+    console.log('[VelocityPlot] Raw Data:', data);
+    console.log('[VelocityPlot] Sprint Map:', sprintMap);
+    console.log('[VelocityPlot] Avg Velocities:', avgVelocities);
 
     const sprintColors = ['#b09cc8', '#66BB6A', '#FFA726'];
 
     const datasets: ChartData<'bar' | 'line'>['datasets'] = sprintLabels.map((label, i) => ({
       label,
-      data: sprintMap.get(label) ?? [],
+      data: sprintMap.get(label)?.map(v => v ?? 0) ?? [],
       type: 'bar',
       order: 1,
       borderSkipped: false,
