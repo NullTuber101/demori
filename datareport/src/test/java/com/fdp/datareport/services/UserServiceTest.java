@@ -116,4 +116,27 @@ class UserServiceTest {
         when(userRepository.existsById(2L)).thenReturn(false);
         assertThat(userService.deleteUser(2L)).isFalse();
     }
+    @Test
+    void testInitializeDefaultUserWhenNoUsersExist() {
+        when(userRepository.count()).thenReturn(0L);
+        when(roleService.getRoleByName("SUPER_USER")).thenReturn(role);
+        when(passwordEncoder.encode("admin123")).thenReturn("encodedAdmin");
+        when(userRepository.save(any(User.class))).thenReturn(user);
+
+        userService.initializeDefaultUser();
+
+        verify(userRepository).save(argThat(savedUser ->
+                savedUser.getBrid().equals("admin01") &&
+                        savedUser.getPassword().equals("encodedAdmin") &&
+                        savedUser.getRole().equals(role)
+        ));
+    }
+
+    @Test
+    void testInitializeDefaultUserWhenUsersExist() {
+        when(userRepository.count()).thenReturn(5L); // simulate existing users
+        userService.initializeDefaultUser();
+        verify(userRepository, never()).save(any());
+    }
+
 }

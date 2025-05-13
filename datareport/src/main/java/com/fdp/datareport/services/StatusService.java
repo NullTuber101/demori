@@ -32,12 +32,14 @@ public class StatusService {
 
     // Create a new status
     public Status createStatus(Status status) {
+        status.setStatusName(status.getStatusName().toUpperCase());
         return statusRepository.save(status);
     }
 
     // Update an existing status
     public Status updateStatus(Long id, Status updatedStatus) {
         if (statusRepository.existsById(id)) {
+            updatedStatus.setStatusName(updatedStatus.getStatusName().toUpperCase());
             updatedStatus.setId(id);
             return statusRepository.save(updatedStatus);
         } else {

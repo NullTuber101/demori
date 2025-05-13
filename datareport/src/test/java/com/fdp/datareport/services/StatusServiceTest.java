@@ -30,7 +30,7 @@ class StatusServiceTest {
     }
 
     private Status createStatus() {
-        return new Status(1L, "In Progress", 50);
+        return new Status(1L, "IN PROGRESS", 50);
     }
 
     @Test
@@ -41,7 +41,7 @@ class StatusServiceTest {
         List<Status> result = statusService.getAllStatuses();
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getStatusName()).isEqualTo("In Progress");
+        assertThat(result.get(0).getStatusName()).isEqualTo("IN PROGRESS");
     }
 
     @Test
@@ -62,20 +62,20 @@ class StatusServiceTest {
 
         Status result = statusService.createStatus(status);
 
-        assertThat(result.getStatusName()).isEqualTo("In Progress");
+        assertThat(result.getStatusName()).isEqualTo("IN PROGRESS");
     }
 
     @Test
     void testUpdateStatusWhenExists() {
         Status updated = createStatus();
-        updated.setStatusName("Done");
+        updated.setStatusName("DONE");
 
         when(statusRepository.existsById(1L)).thenReturn(true);
         when(statusRepository.save(updated)).thenReturn(updated);
 
         Status result = statusService.updateStatus(1L, updated);
 
-        assertThat(result.getStatusName()).isEqualTo("Done");
+        assertThat(result.getStatusName()).isEqualTo("DONE");
         assertThat(result.getId()).isEqualTo(1L);
     }
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fdp.datareport.validation.annotations.ValidPercentage;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 @Entity
@@ -18,6 +19,7 @@ public class Status {
     private Long id;
 
     @NotNull(message="Status name is required")
+    @Size(max = 30, message = "Status Name must not exceed 30 characters")
     private String statusName;
     @ValidPercentage
     private Integer percentage;

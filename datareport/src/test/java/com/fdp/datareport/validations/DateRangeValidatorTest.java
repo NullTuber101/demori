@@ -51,7 +51,7 @@ class DateRangeValidatorTest {
         });
     }
 
-    // Dummy test class with 'start' and 'end' fields
+    // ✅ Valid test class
     static class DummyBean {
         Date start;
         Date end;
@@ -60,6 +60,17 @@ class DateRangeValidatorTest {
             this.start = start;
             this.end = end;
         }
+    }
+
+    // ❌ Invalid type class (wrong field types)
+    static class InvalidTypeBean {
+        String start = "not a date";
+        String end = "still not a date";
+    }
+
+    // ❌ Missing fields (reflection failure)
+    static class NoFieldBean {
+        Date somethingElse;
     }
 
     @Test
@@ -96,5 +107,17 @@ class DateRangeValidatorTest {
     void testEndNull_shouldReturnTrue() {
         DummyBean bean = new DummyBean(new Date(), null);
         assertTrue(validator.isValid(bean, null));
+    }
+
+    @Test
+    void testReflectionFailure_shouldReturnFalse() {
+        NoFieldBean bean = new NoFieldBean();
+        assertFalse(validator.isValid(bean, null));
+    }
+
+    @Test
+    void testInvalidFieldTypes_shouldReturnFalse() {
+        InvalidTypeBean bean = new InvalidTypeBean();
+        assertFalse(validator.isValid(bean, null));
     }
 }

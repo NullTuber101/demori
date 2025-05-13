@@ -4,6 +4,7 @@ package com.fdp.datareport.entities;
 import com.fdp.datareport.validation.annotations.ValidDateRange;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.Date;
@@ -21,6 +22,7 @@ public class Sprint {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @NotNull(message="Sprint Name is required")
+    @Size(max = 30, message = "Sprint Name must not exceed 30 characters")
     private String sprintName;
 
     @Temporal(TemporalType.DATE)

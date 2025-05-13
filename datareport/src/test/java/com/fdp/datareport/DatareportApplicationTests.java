@@ -8,6 +8,10 @@ class DatareportApplicationTests {
 
 	@Test
 	void contextLoads() {
+		}
+	@Test
+	void mainMethodRunsWithoutError() {
+		DatareportApplication.main(new String[] {});
 	}
 
 }

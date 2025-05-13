@@ -100,10 +100,16 @@ export class AreaManagerComponent implements OnInit {
 
   addArea() {
     if (this.areaForm.valid) {
-      this.areaService.addArea(this.areaForm.value).subscribe((newArea) => {
-        this.areas.push(newArea);
-        this.areaForm.reset();
-        this.openAlert('success', 'Success', 'Area added successfully!');
+      this.areaService.addArea(this.areaForm.value).subscribe({
+        next: (newArea) => {
+          this.areas.push(newArea);
+          this.areaForm.reset();
+          this.openAlert('success', 'Success', 'Area added successfully!');
+        },
+        error: (err) => {
+          const message = this.extractErrorMessage(err);
+          this.openAlert('error', 'Add Failed', message);
+        }
       });
     } else {
       let errorMessages = [];
@@ -144,7 +150,7 @@ export class AreaManagerComponent implements OnInit {
           this.openAlert('success', 'Success', 'Area updated successfully!');
         },
         error: (err) => {
-          const message = err.error.message?.[0]?.split(":")[1]?.trim() || 'Failed to update area. Please try again.';
+          const message = this.extractErrorMessage(err);
           this.openAlert('error', 'Update Failed', message);
         }
       });
@@ -169,11 +175,30 @@ export class AreaManagerComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (result === true) {
-        this.areaService.deleteArea(this.areas[index].id).subscribe(() => {
-          this.areas.splice(index, 1);
-          this.openAlert('success', 'Deleted', 'Area deleted successfully!');
+        this.areaService.deleteArea(this.areas[index].id).subscribe({
+          next: () => {
+            this.areas.splice(index, 1);
+            this.openAlert('success', 'Deleted', 'Area deleted successfully!');
+          },
+          error: (err) => {
+            const message = this.extractErrorMessage(err);
+            this.openAlert('error', 'Delete Failed', message);
+          }
         });
       }
     });
+  }
+
+  private extractErrorMessage(err: any): string {
+    if (err?.error?.message) {
+      // Backend might return an array or a string
+      if (Array.isArray(err.error.message)) {
+        const err_msg=err.error.message[0].split(":")[1]?.trim() || 'Failed to add Scrum Area.';
+        return err_msg;
+      } else if (typeof err.error.message === 'string') {
+        return err.error.message;
+      }
+    }
+    return 'An unexpected error occurred. Please try again.';
   }
 }

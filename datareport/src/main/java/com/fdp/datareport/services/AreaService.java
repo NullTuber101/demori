@@ -31,12 +31,14 @@ public class AreaService {
 
     // Add a new area
     public Area addArea(Area area) {
+        area.setName(area.getName().toUpperCase());
         return areaRepo.save(area);
     }
 
     // Update an area
     public Area updateArea(Long id, Area updatedArea) {
         if (areaRepo.existsById(id)) {
+            updatedArea.setName(updatedArea.getName().toUpperCase());
             updatedArea.setId(id);
             return areaRepo.save(updatedArea);
         } else {

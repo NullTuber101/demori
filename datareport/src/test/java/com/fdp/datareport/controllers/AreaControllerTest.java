@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -95,7 +96,7 @@ public class AreaControllerTest {
     @Test
     @WithMockUser(roles = {"SUPER_USER"})
     void testUpdateAreaSuccess() throws Exception {
-        Mockito.when(areaService.updateArea(Mockito.eq(1L), any(Area.class))).thenReturn(area);
+        Mockito.when(areaService.updateArea(eq(1L), any(Area.class))).thenReturn(area);
 
         mockMvc.perform(put("/api/areas/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -107,7 +108,7 @@ public class AreaControllerTest {
     @Test
     @WithMockUser(roles = {"SUPER_USER"})
     void testUpdateAreaNotFound() throws Exception {
-        Mockito.when(areaService.updateArea(Mockito.eq(1L), any(Area.class))).thenReturn(null);
+        Mockito.when(areaService.updateArea(eq(1L), any(Area.class))).thenReturn(null);
 
         mockMvc.perform(put("/api/areas/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -134,4 +135,48 @@ public class AreaControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Area not found"));
     }
+
+    @Test
+    void testGetAreaByIdException() throws Exception {
+        Mockito.when(areaService.getAreaById(1L)).thenThrow(new RuntimeException("DB issue"));
+
+        mockMvc.perform(get("/api/areas/1"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error").value("Unexpected error: DB issue"));
+    }
+
+    @Test
+    @WithMockUser(roles = {"EDITOR"})
+    void testAddAreaThrowsException() throws Exception {
+        Mockito.when(areaService.addArea(any())).thenThrow(new RuntimeException("Insert failed"));
+
+        mockMvc.perform(post("/api/areas")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(area)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error").value("Failed to create area: Insert failed"));
+    }
+
+    @Test
+    @WithMockUser(roles = {"EDITOR"})
+    void testUpdateAreaThrowsException() throws Exception {
+        Mockito.when(areaService.updateArea(eq(1L), any())).thenThrow(new RuntimeException("Update failed"));
+
+        mockMvc.perform(put("/api/areas/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(area)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error").value("Failed to update area: Update failed"));
+    }
+
+    @Test
+    @WithMockUser(roles = {"EDITOR"})
+    void testDeleteAreaThrowsException() throws Exception {
+        Mockito.doThrow(new RuntimeException("Delete failed")).when(areaService).deleteArea(1L);
+
+        mockMvc.perform(delete("/api/areas/1"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error").value("Failed to delete area: Delete failed"));
+    }
+
 }

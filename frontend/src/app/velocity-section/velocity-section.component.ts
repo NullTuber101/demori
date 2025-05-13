@@ -120,7 +120,10 @@ export class VelocitySectionComponent implements OnInit {
           this.editingScrumAreaId = null;
           this.loadScrumAreas();
         },
-        error: () => this.openDialog('Error', 'Failed to update Scrum Area.')
+        error: (err) => {
+          const err_msg=err.error.message[0].split(":")[1]?.trim() || 'Failed to add Scrum Area.'
+          this.openDialog('Error', err_msg)
+        }
       });
     } else {
       this.velocityService.addScrumArea(this.scrumAreaForm.value).subscribe({
@@ -129,7 +132,10 @@ export class VelocitySectionComponent implements OnInit {
           this.scrumAreaForm.reset();
           this.loadScrumAreas();
         },
-        error: () => this.openDialog('Error', 'Failed to add Scrum Area.')
+        error: (err) =>{
+          const err_msg=err.error.message[0].split(":")[1]?.trim() || 'Failed to add Scrum Area.'
+        this.openDialog('Error', err_msg)
+        }
       });
     }
   }

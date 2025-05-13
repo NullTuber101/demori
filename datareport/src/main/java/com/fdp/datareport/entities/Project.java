@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fdp.datareport.validation.annotations.ValidDateRange;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -20,7 +21,8 @@ public class Project {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @NotNull(message="Project Name is required")
+    @NotNull(message = "Project Name is required")
+    @Size(max = 30, message = "Project Name must not exceed 30 characters. Please enter the details in description")
     private String projectName;
     @Lob
     private String description;

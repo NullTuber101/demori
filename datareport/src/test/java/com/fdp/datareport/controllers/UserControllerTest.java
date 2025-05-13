@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -118,4 +119,28 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Role updated successfully"));
     }
+
+    @Test
+    void shouldReturn404WhenDeletingNonExistingUser() throws Exception {
+        when(userService.deleteUser(99L)).thenReturn(false);
+
+        mockMvc.perform(delete("/api/users/99")
+                        .header("Authorization", superToken))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("User not found"));
+    }
+
+    @Test
+    void shouldReturn500WhenUpdateRoleFails() throws Exception {
+        // Simulate failure in role update
+        doThrow(new RuntimeException("DB error")).when(userService).updateUserRole(1L, "EDITOR");
+
+        mockMvc.perform(put("/api/users/1/role")
+                        .header("Authorization", superToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"roleName\":\"EDITOR\"}"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error").value("Role update failed: DB error"));
+    }
+
 }

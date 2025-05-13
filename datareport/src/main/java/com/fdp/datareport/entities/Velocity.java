@@ -4,6 +4,7 @@ package com.fdp.datareport.entities;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -20,6 +21,7 @@ public class Velocity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @NotNull(message="Sprint Name is required")
+    @Size(max = 30, message = "Sprint Name must not exceed 30 characters")
     private String sprintName;
     @NotNull(message="velocity is required")
     @PositiveOrZero(message = "Velocity must be zero or positive")
