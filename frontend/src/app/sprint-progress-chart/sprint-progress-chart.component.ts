@@ -38,49 +38,45 @@ export class SprintProgressChartComponent implements OnChanges {
   public lineChartOptions: ChartConfiguration<'line'>['options'] = {
     responsive: true,
     layout: {
-      padding: {
-        top: 30 // ✅ Adds space above chart for labels
-      }
+      padding: { top: 30 }
     },
     plugins: {
       datalabels: {
         display: true,
         align: 'top',
         anchor: 'end',
-        font: {
-          weight: 'bold'
-        },
+        font: { weight: 'bold' },
         formatter: (_value, context) => {
           return this.pointLabels[context.dataIndex] ?? '';
         }
       },
-      legend: {
-        display: false
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (tooltipItems) => {
+            const index = tooltipItems[0].dataIndex;
+            return `Sprint: ${this.sprintNames[index]}`;
+          },
+          label: () => '' 
+        }
       }
     },
     scales: {
       x: {
-        title: {
-          display: true,
-          text: 'Date'
-        },
-        offset: true, // ✅ Adds horizontal spacing
-        ticks: {
-          padding: 10
-        }
+        title: { display: true, text: 'Date' },
+        offset: true,
+        ticks: { padding: 10 }
       },
       y: {
         min: 0,
         max: 100,
-        title: {
-          display: true,
-          text: 'Progress (%)'
-        }
+        title: { display: true, text: 'Progress (%)' }
       }
     }
   };
 
   private pointLabels: string[] = [];
+  private sprintNames: string[] = [];
 
   ngOnChanges(): void {
     if (!this.sprints?.length) return;
@@ -96,6 +92,7 @@ export class SprintProgressChartComponent implements OnChanges {
     const data = sorted.map(s => s.sprintFor?.percentage ?? 0);
 
     this.pointLabels = sorted.map(s => s.sprintFor?.statusName ?? '');
+    this.sprintNames = sorted.map(s => s.sprintName ?? '');
 
     this.lineChartData = {
       labels,
@@ -108,7 +105,7 @@ export class SprintProgressChartComponent implements OnChanges {
           tension: 0.3,
           pointRadius: 5,
           pointBackgroundColor: '#3f51b5',
-          clip: false, // ✅ prevent clipping of start/end points
+          clip: false,
           datalabels: {
             align: 'top',
             anchor: 'end',

@@ -68,6 +68,12 @@
 
     <!-- Right: Sprint List -->
     <section class="list-section">
+        <div class="sort-bar">
+            <button mat-stroked-button (click)="toggleSortByEndDate()">
+                Sort by End Date: {{ sortAscending ? 'Oldest First' : 'Newest First' }}
+            </button>
+        </div>
+          
         <h3>Sprint List</h3>
 
         <div class="sprint-list">

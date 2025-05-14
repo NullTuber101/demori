@@ -55,6 +55,7 @@ export class ProjectWiseInsightComponent implements OnInit {
 
   isLoggedIn: boolean = false;
   userRole: string = 'VIEWER';
+  sortAscending: boolean = true; // default to ascending
 
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
@@ -140,7 +141,15 @@ export class ProjectWiseInsightComponent implements OnInit {
       }
     });
   }
-
+  toggleSortByEndDate(): void {
+    this.sortAscending = !this.sortAscending;
+    this.sprints.sort((a, b) => {
+      const aTime = new Date(a.sprintEndDate).getTime();
+      const bTime = new Date(b.sprintEndDate).getTime();
+      return this.sortAscending ? aTime - bTime : bTime - aTime;
+    });
+  }
+  
   addSprint() {
     if (this.sprintForm.valid && this.isLoggedIn && this.userRole !== 'VIEWER') {
       const sprintData = {
