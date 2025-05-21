@@ -1,8 +1,7 @@
 package com.fdp.datareport.config;
 
-import com.fdp.datareport.entities.User;
-import com.fdp.datareport.services.RoleService;
-import com.fdp.datareport.services.UserService;
+import com.fdp.datareport.service.RoleService;
+import com.fdp.datareport.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

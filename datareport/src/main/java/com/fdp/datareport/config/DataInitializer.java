@@ -1,7 +1,7 @@
 package com.fdp.datareport.config;
 
-import com.fdp.datareport.services.RoleService;
-import com.fdp.datareport.services.UserService;
+import com.fdp.datareport.service.RoleService;
+import com.fdp.datareport.service.UserService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

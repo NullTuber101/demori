@@ -1,6 +1,6 @@
 package com.fdp.datareport.config;
 
-import com.fdp.datareport.filters.JwtAuthFilter;
+import com.fdp.datareport.filter.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

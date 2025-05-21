@@ -22,8 +22,7 @@ import { GenericDialogComponent } from '../generic-dialog/generic-dialog.compone
     MatDialogModule
   ],
   templateUrl: './admin-dashboard.component.html',
-  styleUrls: ['./admin-dashboard.component.css'],
-  providers: [AdminService]
+  styleUrls: ['./admin-dashboard.component.css']
 })
 export class AdminDashboardComponent implements OnInit {
   pendingRequests = signal<any[]>([]);
