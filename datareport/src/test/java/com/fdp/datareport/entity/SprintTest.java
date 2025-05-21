@@ -15,7 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SprintTest {
 
     private Validator validator;
-
     private Project testProject;
     private Status testStatus;
 
@@ -38,7 +37,7 @@ class SprintTest {
         Sprint sprint = new Sprint(
                 1L,
                 "Sprint 1",
-                new Date(System.currentTimeMillis() - 86400000L), // yesterday
+                new Date(System.currentTimeMillis() - 86400000L),
                 new Date(),
                 "JIRA-SPRINT-1",
                 "Initial sprint",
@@ -53,11 +52,11 @@ class SprintTest {
 
     @Test
     void testMissingRequiredFields() {
-        Sprint sprint = new Sprint();
+        Sprint sprint = new Sprint(); // all null
 
         Set<ConstraintViolation<Sprint>> violations = validator.validate(sprint);
 
-        assertThat(violations).hasSizeGreaterThan(0);
+        assertThat(violations).hasSize(5);
         assertThat(violations)
                 .anyMatch(v -> v.getPropertyPath().toString().equals("sprintName"))
                 .anyMatch(v -> v.getPropertyPath().toString().equals("sprintStartDate"))
@@ -70,12 +69,12 @@ class SprintTest {
     void testInvalidDateRange() {
         Sprint sprint = new Sprint(
                 2L,
-                "Invalid Sprint",
-                new Date(System.currentTimeMillis() + 100000), // future start
-                new Date(),                                    // past end
-                "JIRA-BAD",
-                "Bad date range",
-                "Test User",
+                "Sprint Fail",
+                new Date(System.currentTimeMillis() + 86400000L), // future start
+                new Date(System.currentTimeMillis()),              // now
+                "JIRA-FAIL",
+                "Bad range",
+                "Tester",
                 testStatus,
                 testProject
         );
@@ -83,7 +82,25 @@ class SprintTest {
         Set<ConstraintViolation<Sprint>> violations = validator.validate(sprint);
 
         assertThat(violations)
-                .anyMatch(v -> v.getMessage().toLowerCase().contains("start date must")
-                        || v.getMessage().toLowerCase().contains("invalid date range"));
+                .anyMatch(v -> v.getMessage().equals("Start date must not be after end date"));
+    }
+
+
+    @Test
+    void testSprintNameExceedsMaxLength() {
+        Sprint sprint = new Sprint();
+        sprint.setSprintName("A".repeat(51)); // Exceeds @Size max = 50
+        sprint.setSprintStartDate(new Date());
+        sprint.setSprintEndDate(new Date(System.currentTimeMillis() + 86400000));
+        sprint.setSprintJira("JIRA-OVER");
+        sprint.setAssignedTo("Test User");
+        sprint.setProject(testProject);
+        sprint.setSprintFor(testStatus);
+
+        Set<ConstraintViolation<Sprint>> violations = validator.validate(sprint);
+
+        assertThat(violations)
+                .anyMatch(v -> v.getPropertyPath().toString().equals("sprintName") &&
+                        v.getMessage().contains("must not exceed 50 characters"));
     }
 }

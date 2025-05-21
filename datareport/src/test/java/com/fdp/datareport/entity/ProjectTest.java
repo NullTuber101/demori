@@ -1,4 +1,3 @@
-
 package com.fdp.datareport.entity;
 
 import jakarta.validation.ConstraintViolation;
@@ -11,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Date;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ProjectTest {
@@ -36,7 +36,7 @@ class ProjectTest {
         project.setStatus(new Status()); // stub
 
         Set<ConstraintViolation<Project>> violations = validator.validate(project);
-        assertTrue(violations.isEmpty(), "Project should be valid");
+        assertThat(violations).isEmpty();
     }
 
     @Test
@@ -44,31 +44,55 @@ class ProjectTest {
         Project project = new Project(); // all fields null
 
         Set<ConstraintViolation<Project>> violations = validator.validate(project);
-        assertFalse(violations.isEmpty(), "Should have violations");
-        assertEquals(5, violations.size(), "Expected 5 @NotNull violations (projectName, developer, jira, startDate, endDate)");
+
+        assertThat(violations).hasSize(5);
+        assertThat(violations)
+                .anyMatch(v -> v.getPropertyPath().toString().equals("projectName") &&
+                        v.getMessage().equals("Project Name is required"))
+                .anyMatch(v -> v.getPropertyPath().toString().equals("developer") &&
+                        v.getMessage().equals("Developer Name is required"))
+                .anyMatch(v -> v.getPropertyPath().toString().equals("jira") &&
+                        v.getMessage().equals("Jira is required"))
+                .anyMatch(v -> v.getPropertyPath().toString().equals("startDate") &&
+                        v.getMessage().equals("Start Date is required"))
+                .anyMatch(v -> v.getPropertyPath().toString().equals("endDate") &&
+                        v.getMessage().equals("End Date is required"));
     }
 
     @Test
     void shouldFailValidationForInvalidDateRange() {
         Project project = new Project();
-        project.setProjectName("Date Test");
+        project.setProjectName("Invalid Dates");
         project.setDeveloper("Dev");
         project.setJira("JIRA-456");
-        project.setStartDate(new Date(System.currentTimeMillis() + 86400000)); // tomorrow
-        project.setEndDate(new Date()); // today
+        project.setStartDate(new Date(System.currentTimeMillis() + 86400000)); // future
+        project.setEndDate(new Date(System.currentTimeMillis())); // now
 
         Set<ConstraintViolation<Project>> violations = validator.validate(project);
-        assertFalse(violations.isEmpty(), "Expected validation failure for invalid date range");
 
-        boolean hasDateRangeViolation = violations.stream()
-                .anyMatch(v -> v.getMessage().toLowerCase().contains("end date") || v.getMessage().toLowerCase().contains("valid date"));
-
-        assertTrue(hasDateRangeViolation, "Expected a date range violation message");
+        assertThat(violations)
+                .anyMatch(v -> v.getMessage().toLowerCase().contains("end date") ||
+                        v.getMessage().toLowerCase().contains("valid date"));
     }
 
     @Test
-    void onDeleteShouldNotThrow() {
+    void shouldTriggerOnDeleteMethodSafely() {
         Project project = new Project();
         assertDoesNotThrow(project::onDelete, "onDelete should not throw any exception");
+    }
+
+    @Test
+    void shouldFailWhenProjectNameExceedsMaxLength() {
+        Project project = new Project();
+        project.setProjectName("A".repeat(31)); // exceeds @Size max=30
+        project.setDeveloper("Dev");
+        project.setJira("JIRA-789");
+        project.setStartDate(new Date());
+        project.setEndDate(new Date());
+
+        Set<ConstraintViolation<Project>> violations = validator.validate(project);
+        assertThat(violations)
+                .anyMatch(v -> v.getPropertyPath().toString().equals("projectName") &&
+                        v.getMessage().contains("must not exceed 30 characters"));
     }
 }

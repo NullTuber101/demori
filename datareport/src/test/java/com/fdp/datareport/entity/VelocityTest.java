@@ -24,9 +24,8 @@ public class VelocityTest {
 
     @Test
     void testMissingRequiredFields() {
-        // Create an invalid Velocity object
         Velocity velocity = new Velocity();
-        velocity.setSprintName(""); // NotBlank triggers
+        velocity.setSprintName(""); // NotBlank
         velocity.setVelocity(null); // NotNull
         velocity.setSprintEndDate(null); // NotNull
         velocity.setScrumArea(null); // NotNull
@@ -35,26 +34,25 @@ public class VelocityTest {
 
         assertThat(violations).hasSize(4);
 
-        assertThat(violations)
-                .anyMatch(v -> v.getPropertyPath().toString().equals("sprintName") &&
+        assertThat(violations).anyMatch(v ->
+                v.getPropertyPath().toString().equals("sprintName") &&
                         v.getMessage().equals("Sprint Name is required"));
 
-        assertThat(violations)
-                .anyMatch(v -> v.getPropertyPath().toString().equals("velocity") &&
+        assertThat(violations).anyMatch(v ->
+                v.getPropertyPath().toString().equals("velocity") &&
                         v.getMessage().equals("Velocity is required"));
 
-        assertThat(violations)
-                .anyMatch(v -> v.getPropertyPath().toString().equals("sprintEndDate") &&
+        assertThat(violations).anyMatch(v ->
+                v.getPropertyPath().toString().equals("sprintEndDate") &&
                         v.getMessage().equals("Sprint End Date is required"));
 
-        assertThat(violations)
-                .anyMatch(v -> v.getPropertyPath().toString().equals("scrumArea") &&
+        assertThat(violations).anyMatch(v ->
+                v.getPropertyPath().toString().equals("scrumArea") &&
                         v.getMessage().equals("Scrum Area is required"));
     }
 
     @Test
     void testValidVelocityObjectWithSettersAndGetters() {
-        // Create and populate a valid ScrumArea
         ScrumArea scrumArea = new ScrumArea();
         scrumArea.setId(1L);
         scrumArea.setAreaName("Backend Team");
@@ -62,19 +60,18 @@ public class VelocityTest {
         scrumArea.setScrumTeam("Team Alpha");
         scrumArea.setBoardId("BOARD-001");
 
-        // Create and populate a valid Velocity object
         Velocity velocity = new Velocity();
         velocity.setSprintName("Sprint 10");
-        velocity.setVelocity(20.5f);
+        velocity.setVelocity(15.5f);
         velocity.setSprintEndDate(LocalDate.now());
         velocity.setScrumArea(scrumArea);
 
         Set<ConstraintViolation<Velocity>> violations = validator.validate(velocity);
         assertThat(violations).isEmpty();
 
-        // Validate getters (required for 100% coverage)
+        // Access all fields for getter/setter coverage
         assertThat(velocity.getSprintName()).isEqualTo("Sprint 10");
-        assertThat(velocity.getVelocity()).isEqualTo(20.5f);
+        assertThat(velocity.getVelocity()).isEqualTo(15.5f);
         assertThat(velocity.getSprintEndDate()).isNotNull();
         assertThat(velocity.getScrumArea()).isEqualTo(scrumArea);
     }
@@ -87,6 +84,7 @@ public class VelocityTest {
         assertThat(velocity.getId()).isEqualTo(10L);
         assertThat(velocity.getSprintName()).isEqualTo("Sprint Final");
         assertThat(velocity.getVelocity()).isEqualTo(10f);
-        assertThat(velocity.getScrumArea().getScrumMaster()).isEqualTo("John");
+        assertThat(velocity.getSprintEndDate()).isNotNull();
+        assertThat(velocity.getScrumArea()).isEqualTo(area);
     }
 }
