@@ -4,15 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fdp.datareport.entity.ScrumArea;
 import com.fdp.datareport.entity.Velocity;
 import com.fdp.datareport.service.VelocityService;
-import com.fdp.datareport.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -20,157 +19,129 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.Mockito.*;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(VelocityController.class)
 class VelocityControllerTest {
 
-    @Autowired private MockMvc mockMvc;
-    @Autowired private ObjectMapper objectMapper;
-    @Autowired private JwtUtil jwtUtil;
+    @Autowired
+    private MockMvc mockMvc;
 
-    @MockBean private VelocityService velocityService;
+    @MockBean
+    private VelocityService velocityService;
 
-    private String editorToken;
-    private Velocity testVelocity;
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private Velocity velocity;
 
     @BeforeEach
     void setUp() {
-        editorToken = "Bearer " + jwtUtil.generateToken("editor123", "EDITOR");
+        ScrumArea scrumArea = new ScrumArea();
+        scrumArea.setId(1L);
+        scrumArea.setAreaName("Backend Team");
+        scrumArea.setScrumMaster("Alice");
+        scrumArea.setScrumTeam("Team A");
+        scrumArea.setBoardId("BOARD-123");
 
-        ScrumArea scrumArea = new ScrumArea(1L, "Area A", "SM", "Team A", "BOARD123");
-
-        testVelocity = new Velocity();
-        testVelocity.setId(1L);
-        testVelocity.setSprintName("Sprint 1");
-        testVelocity.setVelocity(40.5f);
-        testVelocity.setSprintEndDate(LocalDate.now());
-        testVelocity.setScrumArea(scrumArea);
+        velocity = new Velocity();
+        velocity.setId(1L);
+        velocity.setSprintName("Sprint X");
+        velocity.setVelocity(25.0f);
+        velocity.setSprintEndDate(LocalDate.of(2024, 5, 10));
+        velocity.setScrumArea(scrumArea);
     }
 
-    // ✅ GET endpoints (public)
     @Test
-    void shouldGetAllVelocitiesWithoutAuth() throws Exception {
-        when(velocityService.getAllVelocities()).thenReturn(List.of(testVelocity));
+    void testGetAllVelocities() throws Exception {
+        Mockito.when(velocityService.getAllVelocities()).thenReturn(List.of(velocity));
 
         mockMvc.perform(get("/api/velocities"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1));
+                .andExpect(jsonPath("$[0].sprintName", is("Sprint X")));
     }
 
     @Test
-    void shouldGetVelocitiesByScrumAreaId() throws Exception {
-        when(velocityService.getVelocitiesByScrumAreaId(1L)).thenReturn(List.of(testVelocity));
+    void testGetByScrumArea() throws Exception {
+        Mockito.when(velocityService.getVelocitiesByScrumAreaId(1L)).thenReturn(List.of(velocity));
 
         mockMvc.perform(get("/api/velocities/scrum-area/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].sprintName").value("Sprint 1"));
+                .andExpect(jsonPath("$[0].velocity", is(25.0)));
     }
 
     @Test
-    void shouldGetChartData() throws Exception {
-        when(velocityService.getVelocityGroupedByScrumArea())
-                .thenReturn(List.of(Map.of("areaName", "Area A", "averageVelocity", 50)));
+    void testGetVelocityChartData() throws Exception {
+        Map<String, Object> chartData = Map.of("area", "Backend Team", "avgVelocity", 25.0);
+        Mockito.when(velocityService.getVelocityGroupedByScrumArea()).thenReturn(List.of(chartData));
 
         mockMvc.perform(get("/api/velocities/chart-data"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].areaName").value("Area A"));
+                .andExpect(jsonPath("$[0].area", is("Backend Team")));
     }
 
-    // ✅ POST (create)
     @Test
-    void shouldCreateVelocityWithEditorToken() throws Exception {
-        when(velocityService.createVelocity(eq(1L), any(Velocity.class))).thenReturn(testVelocity);
+    void testCreateVelocitySuccess() throws Exception {
+        Mockito.when(velocityService.createVelocity(eq(1L), any(Velocity.class))).thenReturn(velocity);
 
         mockMvc.perform(post("/api/velocities/1")
-                        .header("Authorization", editorToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(testVelocity)))
+                        .content(objectMapper.writeValueAsString(velocity)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.sprintName").value("Sprint 1"));
+                .andExpect(jsonPath("$.sprintName", is("Sprint X")));
     }
 
     @Test
-    void shouldReturn403WithoutTokenOnCreate() throws Exception {
-        mockMvc.perform(post("/api/velocities/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(testVelocity)))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void shouldReturn500OnCreateVelocityError() throws Exception {
-        when(velocityService.createVelocity(anyLong(), any(Velocity.class)))
+    void testCreateVelocityFailure() throws Exception {
+        Mockito.when(velocityService.createVelocity(eq(1L), any(Velocity.class)))
                 .thenThrow(new RuntimeException("DB error"));
 
         mockMvc.perform(post("/api/velocities/1")
-                        .header("Authorization", editorToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(testVelocity)))
+                        .content(objectMapper.writeValueAsString(velocity)))
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.error").value("Failed to create velocity: DB error"));
+                .andExpect(jsonPath("$.error", is("Failed to create velocity: DB error")));
     }
 
-    // ✅ PUT (update)
     @Test
-    void shouldUpdateVelocityWithEditorToken() throws Exception {
-        when(velocityService.updateVelocity(eq(1L), any(Velocity.class))).thenReturn(testVelocity);
+    void testUpdateVelocitySuccess() throws Exception {
+        Mockito.when(velocityService.updateVelocity(eq(1L), any(Velocity.class))).thenReturn(velocity);
 
         mockMvc.perform(put("/api/velocities/1")
-                        .header("Authorization", editorToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(testVelocity)))
+                        .content(objectMapper.writeValueAsString(velocity)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.velocity").value(40.5));
+                .andExpect(jsonPath("$.velocity", is(25.0)));
     }
 
     @Test
-    void shouldReturn500OnUpdateVelocityError() throws Exception {
-        when(velocityService.updateVelocity(eq(1L), any(Velocity.class)))
-                .thenThrow(new RuntimeException("Update failed"));
+    void testUpdateVelocityFailure() throws Exception {
+        Mockito.when(velocityService.updateVelocity(eq(1L), any(Velocity.class)))
+                .thenThrow(new RuntimeException("Update error"));
 
         mockMvc.perform(put("/api/velocities/1")
-                        .header("Authorization", editorToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(testVelocity)))
+                        .content(objectMapper.writeValueAsString(velocity)))
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.error").value("Failed to update velocity: Update failed"));
+                .andExpect(jsonPath("$.error", is("Failed to update velocity: Update error")));
     }
 
     @Test
-    void shouldReturn403WithoutTokenOnUpdate() throws Exception {
-        mockMvc.perform(put("/api/velocities/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(testVelocity)))
-                .andExpect(status().isForbidden());
-    }
-
-    // ✅ DELETE
-    @Test
-    void shouldDeleteVelocityWithEditorToken() throws Exception {
-        doNothing().when(velocityService).deleteVelocity(1L);
-
-        mockMvc.perform(delete("/api/velocities/1")
-                        .header("Authorization", editorToken))
+    void testDeleteVelocitySuccess() throws Exception {
+        mockMvc.perform(delete("/api/velocities/1"))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    void shouldReturn500OnDeleteError() throws Exception {
-        doThrow(new RuntimeException("Delete failed")).when(velocityService).deleteVelocity(1L);
+    void testDeleteVelocityFailure() throws Exception {
+        Mockito.doThrow(new RuntimeException("Delete failed")).when(velocityService).deleteVelocity(1L);
 
-        mockMvc.perform(delete("/api/velocities/1")
-                        .header("Authorization", editorToken))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.error").value("Failed to delete velocity: Delete failed"));
-    }
-
-    @Test
-    void shouldReturn403WithoutTokenOnDelete() throws Exception {
         mockMvc.perform(delete("/api/velocities/1"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error", is("Failed to delete velocity: Delete failed")));
     }
 }

@@ -19,7 +19,7 @@
       </mat-form-field>
     </mat-card-content>
 
-    <mat-card-actions *ngIf="isLoggedIn && userRole !== 'VIEWER'">
+    <mat-card-actions >
       <button mat-raised-button color="primary" type="submit">Submit</button>
     </mat-card-actions>
   </mat-card>
@@ -38,7 +38,7 @@
         <div matTooltip="{{ area.leadEmail }}"><strong>Lead Email:</strong> {{ area.leadEmail }}</div>
       </div>
 
-      <div class="area-actions" *ngIf="isLoggedIn && userRole !== 'VIEWER'">
+      <div class="area-actions" >
         <button mat-icon-button color="primary" (click)="enableEdit(i)">
           <mat-icon>edit</mat-icon>
         </button>
@@ -72,7 +72,7 @@
         </mat-form-field>
       </mat-card-content>
 
-      <mat-card-actions align="end" *ngIf="isLoggedIn && userRole !== 'VIEWER'">
+      <mat-card-actions align="end" >
         <button mat-raised-button color="primary" type="submit">Save</button>
         <button mat-stroked-button type="button" (click)="cancelEdit()">Cancel</button>
       </mat-card-actions>

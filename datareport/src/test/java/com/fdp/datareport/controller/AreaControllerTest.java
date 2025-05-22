@@ -1,10 +1,8 @@
 package com.fdp.datareport.controller;
 
-import com.fdp.datareport.config.SecurityConfig;
+import com.fdp.datareport.config.WebConfig;
 import com.fdp.datareport.entity.Area;
-import com.fdp.datareport.filter.JwtAuthFilter;
 import com.fdp.datareport.service.AreaService;
-import com.fdp.datareport.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +12,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -26,7 +23,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = AreaController.class)
-@Import({SecurityConfig.class, JwtAuthFilter.class, JwtUtil.class})
 public class AreaControllerTest {
 
     @Autowired
@@ -73,7 +69,6 @@ public class AreaControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = {"EDITOR"})
     void testAddAreaAuthorized() throws Exception {
         Mockito.when(areaService.addArea(any(Area.class))).thenReturn(area);
 
@@ -93,7 +88,6 @@ public class AreaControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = {"SUPER_USER"})
     void testUpdateAreaSuccess() throws Exception {
         Mockito.when(areaService.updateArea(eq(1L), any(Area.class))).thenReturn(area);
 
@@ -105,7 +99,6 @@ public class AreaControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = {"SUPER_USER"})
     void testUpdateAreaNotFound() throws Exception {
         Mockito.when(areaService.updateArea(eq(1L), any(Area.class))).thenReturn(null);
 
@@ -117,7 +110,6 @@ public class AreaControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = {"EDITOR"})
     void testDeleteAreaSuccess() throws Exception {
         Mockito.when(areaService.deleteArea(1L)).thenReturn(true);
 
@@ -126,7 +118,6 @@ public class AreaControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = {"EDITOR"})
     void testDeleteAreaNotFound() throws Exception {
         Mockito.when(areaService.deleteArea(1L)).thenReturn(false);
 
@@ -145,7 +136,6 @@ public class AreaControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = {"EDITOR"})
     void testAddAreaThrowsException() throws Exception {
         Mockito.when(areaService.addArea(any())).thenThrow(new RuntimeException("Insert failed"));
 
@@ -157,7 +147,6 @@ public class AreaControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = {"EDITOR"})
     void testUpdateAreaThrowsException() throws Exception {
         Mockito.when(areaService.updateArea(eq(1L), any())).thenThrow(new RuntimeException("Update failed"));
 
@@ -169,7 +158,6 @@ public class AreaControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = {"EDITOR"})
     void testDeleteAreaThrowsException() throws Exception {
         Mockito.doThrow(new RuntimeException("Delete failed")).when(areaService).deleteArea(1L);
 

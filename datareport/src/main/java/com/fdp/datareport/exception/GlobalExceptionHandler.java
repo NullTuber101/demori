@@ -4,8 +4,6 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -58,13 +56,7 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse("Not Found", List.of(ex.getMessage()), HttpStatus.NOT_FOUND.value()));
     }
 
-    // Handle access denied (403) — for Spring Security method restrictions
-    @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})
-    @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ResponseEntity<ErrorResponse> handleAccessDenied(Exception ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(new ErrorResponse("Forbidden", List.of("You are not authorized to perform this action"), HttpStatus.FORBIDDEN.value()));
-    }
+
 
     //  Catch-all for uncaught exceptions
     @ExceptionHandler(Exception.class)

@@ -44,20 +44,6 @@ export const routes: Routes = [
       )
   },
   {
-      path: 'admin',
-      loadComponent: () =>
-        import('./admin-dashboard/admin-dashboard.component').then(
-          (m) => m.AdminDashboardComponent
-        )
-    },
-    {
-      path: 'login',
-      loadComponent: () =>
-        import('./login-signup/login-signup.component').then(
-          (m) => m.LoginSignupComponent
-        )
-    },
-  {
     path: 'project/:id/insight',
     loadComponent: () =>
       import('./project-wise-insight/project-wise-insight.component').then(

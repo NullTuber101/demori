@@ -2,7 +2,6 @@ package com.fdp.datareport.controller;
 
 import com.fdp.datareport.entity.ScrumArea;
 import com.fdp.datareport.service.ScrumAreaService;
-import com.fdp.datareport.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -13,13 +12,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -31,9 +28,6 @@ class ScrumAreaControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private JwtUtil jwtUtil;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -48,8 +42,6 @@ class ScrumAreaControllerTest {
     @BeforeEach
     void setup() {
         mockArea = new ScrumArea(1L, "AreaX", "John Doe", "Team Rocket", "BRD-123");
-        editorToken = "Bearer " + jwtUtil.generateToken("editor1", "EDITOR");
-        viewerToken = "Bearer " + jwtUtil.generateToken("viewer1", "VIEWER");
     }
 
     @Test
@@ -79,83 +71,4 @@ class ScrumAreaControllerTest {
                 .andExpect(jsonPath("$.error").value("ScrumArea with ID 999 not found"));
     }
 
-    @Test
-    void createScrumAreaWithoutTokenShouldReturn403() throws Exception {
-        mockMvc.perform(post("/api/scrum-areas")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(mockArea)))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void createScrumAreaWithViewerTokenShouldReturn403() throws Exception {
-        mockMvc.perform(post("/api/scrum-areas")
-                        .header("Authorization", viewerToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(mockArea)))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void createScrumAreaWithEditorTokenShouldSucceed() throws Exception {
-        when(scrumAreaService.createScrumArea(any(ScrumArea.class))).thenReturn(mockArea);
-
-        mockMvc.perform(post("/api/scrum-areas")
-                        .header("Authorization", editorToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(mockArea)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.areaName").value("AreaX"));
-    }
-
-    @Test
-    void updateScrumAreaWithEditorTokenShouldSucceed() throws Exception {
-        when(scrumAreaService.updateScrumArea(eq(1L), any(ScrumArea.class))).thenReturn(mockArea);
-
-        mockMvc.perform(put("/api/scrum-areas/1")
-                        .header("Authorization", editorToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(mockArea)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.areaName").value("AreaX"));
-    }
-
-    @Test
-    void updateScrumAreaWithViewerTokenShouldReturn403() throws Exception {
-        mockMvc.perform(put("/api/scrum-areas/1")
-                        .header("Authorization", viewerToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(mockArea)))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void updateScrumAreaWithoutTokenShouldReturn403() throws Exception {
-        mockMvc.perform(put("/api/scrum-areas/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(mockArea)))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void deleteScrumAreaWithEditorTokenShouldSucceed() throws Exception {
-        doNothing().when(scrumAreaService).deleteScrumArea(1L);
-
-        mockMvc.perform(delete("/api/scrum-areas/1")
-                        .header("Authorization", editorToken))
-                .andExpect(status().isNoContent());
-    }
-
-    @Test
-    void deleteScrumAreaWithViewerTokenShouldReturn403() throws Exception {
-        mockMvc.perform(delete("/api/scrum-areas/1")
-                        .header("Authorization", viewerToken))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void deleteScrumAreaWithoutTokenShouldReturn403() throws Exception {
-        mockMvc.perform(delete("/api/scrum-areas/1"))
-                .andExpect(status().isForbidden());
-    }
 }

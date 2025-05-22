@@ -39,8 +39,6 @@ export class AreaManagerComponent implements OnInit {
   editForm: FormGroup;
   editIndex: number | null = null;
 
-  isLoggedIn: boolean = false;
-  userRole: string = 'VIEWER';
 
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
@@ -62,19 +60,7 @@ export class AreaManagerComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const token = localStorage.getItem('token');
-    this.isLoggedIn = !!token;
-
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        this.userRole = payload.role || 'VIEWER';
-      } catch (err) {
-        this.userRole = 'VIEWER';
-      }
-    }
-
-    this.loadAreas();
+       this.loadAreas();
   }
 
   loadAreas() {

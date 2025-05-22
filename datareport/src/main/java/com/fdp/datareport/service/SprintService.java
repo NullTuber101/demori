@@ -1,7 +1,6 @@
 package com.fdp.datareport.service;
 
-import com.fdp.datareport.entity.Project;
-import com.fdp.datareport.entity.Sprint;
+import com.fdp.datareport.entity.*;
 import com.fdp.datareport.entity.Status;
 import com.fdp.datareport.repository.ProjectRepository;
 import com.fdp.datareport.repository.SprintRepository;

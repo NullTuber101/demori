@@ -1,114 +1,119 @@
 package com.fdp.datareport.exception;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fdp.datareport.controller.VelocityController;
+import com.fdp.datareport.entity.ScrumArea;
+import com.fdp.datareport.entity.Velocity;
+import com.fdp.datareport.service.VelocityService;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authorization.AuthorizationDeniedException;
-import org.springframework.validation.BeanPropertyBindingResult;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
+import java.time.LocalDate;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@WebMvcTest(controllers = VelocityController.class)
 class GlobalExceptionHandlerTest {
 
-    private GlobalExceptionHandler handler;
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private VelocityService velocityService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private Velocity validVelocity;
+    private ScrumArea validScrumArea;
 
     @BeforeEach
     void setUp() {
-        handler = new GlobalExceptionHandler();
+        validScrumArea = new ScrumArea(1L, "Backend", "Alice", "Team A", "BRD-001");
+
+        validVelocity = new Velocity();
+        validVelocity.setId(1L);
+        validVelocity.setSprintName("Sprint A");
+        validVelocity.setVelocity(10.0f);
+        validVelocity.setSprintEndDate(LocalDate.now());
+        validVelocity.setScrumArea(validScrumArea);
     }
 
     @Test
-    void handleValidationExceptions_shouldReturnBadRequestWithMessages() {
-        // Setup binding result with two field errors
-        Object target = new Object();
-        BindingResult bindingResult = new BeanPropertyBindingResult(target, "target");
-        bindingResult.addError(new FieldError("target", "email", "Email is required"));
-        bindingResult.addError(new FieldError("target", "name", "Name is required"));
+    void testHandleValidationException() throws Exception {
+        Velocity invalidVelocity = new Velocity(); // Missing required fields
 
-        MethodArgumentNotValidException ex = new MethodArgumentNotValidException(null, bindingResult);
-
-        ResponseEntity<GlobalExceptionHandler.ErrorResponse> response = handler.handleValidationExceptions(ex);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getError()).isEqualTo("Bad Request");
-        assertThat(response.getBody().getMessages()).containsExactlyInAnyOrder(
-                "email: Email is required", "name: Name is required");
+        mockMvc.perform(post("/api/velocities/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidVelocity)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", is("Bad Request")))
+                .andExpect(jsonPath("$.messages", not(empty())));
     }
 
     @Test
-    void handleDataIntegrityViolation_shouldReturnConflict() {
-        DataIntegrityViolationException ex = new DataIntegrityViolationException("duplicate");
+    void testHandleDataIntegrityViolationException() throws Exception {
+        Mockito.when(velocityService.createVelocity(eq(1L), any(Velocity.class)))
+                .thenThrow(new DataIntegrityViolationException("Duplicate key"));
 
-        ResponseEntity<GlobalExceptionHandler.ErrorResponse> response = handler.handleDataIntegrityViolation(ex);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getMessages()).contains("Duplicate key constraint violated: BRID or Email may already exist.");
+        mockMvc.perform(post("/api/velocities/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validVelocity)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error", is("Conflict")))
+                .andExpect(jsonPath("$.messages[0]", containsString("Duplicate key")));
     }
 
     @Test
-    void handleIllegalArgument_shouldReturnBadRequest() {
-        IllegalArgumentException ex = new IllegalArgumentException("Invalid input");
+    void testHandleIllegalArgumentException() throws Exception {
+        Mockito.when(velocityService.createVelocity(eq(1L), any(Velocity.class)))
+                .thenThrow(new IllegalArgumentException("Invalid velocity data"));
 
-        ResponseEntity<GlobalExceptionHandler.ErrorResponse> response = handler.handleIllegalArgument(ex);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getMessages()).contains("Invalid input");
+        mockMvc.perform(post("/api/velocities/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validVelocity)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", is("Bad Request")))
+                .andExpect(jsonPath("$.messages[0]", is("Invalid velocity data")));
     }
 
     @Test
-    void handleEntityNotFound_shouldReturnNotFound() {
-        EntityNotFoundException ex = new EntityNotFoundException("Project not found");
+    void testHandleEntityNotFoundException() throws Exception {
+        Mockito.when(velocityService.createVelocity(eq(1L), any(Velocity.class)))
+                .thenThrow(new EntityNotFoundException("Scrum area not found"));
 
-        ResponseEntity<GlobalExceptionHandler.ErrorResponse> response = handler.handleEntityNotFound(ex);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getMessages()).contains("Project not found");
+        mockMvc.perform(post("/api/velocities/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validVelocity)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error", is("Not Found")))
+                .andExpect(jsonPath("$.messages[0]", is("Scrum area not found")));
     }
 
     @Test
-    void handleAccessDenied_withAccessDeniedException_shouldReturnForbidden() {
-        AccessDeniedException ex = new AccessDeniedException("Not allowed");
+    void testHandleGenericException() throws Exception {
+        Mockito.when(velocityService.createVelocity(eq(1L), any(Velocity.class)))
+                .thenThrow(new RuntimeException("Unexpected crash"));
 
-        ResponseEntity<GlobalExceptionHandler.ErrorResponse> response = handler.handleAccessDenied(ex);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getMessages()).contains("You are not authorized to perform this action");
-    }
-
-    @Test
-    void handleAccessDenied_withAuthorizationDeniedException_shouldReturnForbidden() {
-        AuthorizationDeniedException ex = new AuthorizationDeniedException("Forbidden access");
-
-        ResponseEntity<GlobalExceptionHandler.ErrorResponse> response = handler.handleAccessDenied(ex);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getMessages()).contains("You are not authorized to perform this action");
-    }
-
-    @Test
-    void handleGenericException_shouldReturnInternalServerError() {
-        Exception ex = new Exception("Unexpected error");
-
-        ResponseEntity<GlobalExceptionHandler.ErrorResponse> response = handler.handleGenericException(ex);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getError()).isEqualTo("Internal Server Error");
-        assertThat(response.getBody().getMessages()).contains("Something went wrong");
+        mockMvc.perform(post("/api/velocities/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validVelocity)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error", is("Internal Server Error")))
+                .andExpect(jsonPath("$.messages[0]", is("Something went wrong")));
     }
 }
