@@ -1,0 +1,513 @@
+Data Reporting System – Full Architecture & Low-Level Design
+
+Tech Stack Overview
+| Layer        | Tech Stack                                |
+|--------------|--------------------------------------------|
+| Frontend     | Angular 15+, TypeScript, Angular Material |
+| Backend      | Spring Boot (Java 17), Spring Security, JWT |
+| Database     | Embedded H2 (JPA via Hibernate)           |
+| Charting     | Chart.js                                  |
+| Communication| RESTful APIs                              |
+
+---
+
+ 1. High-Level Architecture
+
+ 1.1 System Overview
+
+
++-----------------+       HTTP       +-------------------+        JDBC         +-------------+
+|  Angular Front  |  <----------->  | Spring Boot (API) |  <--------------->  | H2 Database |
+|  (Components)   |     JSON+JWT    | Controllers/Service|      JPA ORM       |             |
++-----------------+                 +-------------------+                     +-------------+
+
+
+---
+
+ 1.2 Module Interaction (Frontend ↔ Backend)
+ 🔹 1. Authentication: Login / Signup
+
+Component: login-signup  
+Service: AuthService  
+Backend: AuthController
+
+| Action   | API Endpoint       | Method | Role Required |
+|----------|--------------------|--------|----------------|
+| Login    | /api/auth/login  | POST   |  Public       |
+| Signup   | /api/auth/signup | POST   |  Public       |
+
+---
+
+ 🔹 2. User Management & Role Approval (Admin Panel)
+
+Component: admin-dashboard  
+Service: AdminService  
+Backend: UserController
+
+| Action             | API Endpoint                | Method | Role Required |
+|--------------------|-----------------------------|--------|----------------|
+| Get Pending Users  | /api/users/pending        | GET    | SUPER_USER     |
+| Approve User       | /api/users/approve/{id}   | POST   | SUPER_USER     |
+| Reject User        | /api/users/reject/{id}    | POST   | SUPER_USER     |
+| Update User Role   | /api/users/role/{id}      | PUT    | SUPER_USER     |
+| Get Approved Users | /api/users/approved       | GET    | SUPER_USER     |
+
+---
+
+ 🔹 3. Area Management
+
+Component: area-manager  
+Service: AreaService  
+Backend: AreaController
+
+| Action        | API Endpoint       | Method  | Role Required   |
+|---------------|--------------------|---------|------------------|
+| Get All Areas | /api/areas       | GET     | Any logged-in |
+| Create Area   | /api/areas       | POST    | EDITOR+          |
+| Update Area   | /api/areas/{id}  | PUT     | EDITOR+          |
+| Delete Area   | /api/areas/{id}  | DELETE  | EDITOR+          |
+
+---
+
+ 🔹 4. Project Management
+
+Component: project-view  
+Service: ProjectService  
+Backend: ProjectController
+
+| Action              | API Endpoint                | Method | Role Required |
+|---------------------|-----------------------------|--------|----------------|
+| Get Projects by Area| /api/projects/area/{id}   | GET    | Any          |
+| Create Project       | /api/projects            | POST   | EDITOR+        |
+| Update Project       | /api/projects/{id}       | PUT    | EDITOR+        |
+| Delete Project       | /api/projects/{id}       | DELETE | EDITOR+        |
+
+---
+
+ 🔹 5. Sprint Management & Insights
+
+Component: project-wise-insight  
+Service: SprintService  
+Backend: SprintController
+
+| Action               | API Endpoint                    | Method  | Role Required |
+|----------------------|----------------------------------|---------|----------------|
+| Get Sprints by Project| /api/sprints/project/{id}     | GET     | Any          |
+| Create Sprint         | /api/sprints                  | POST    | EDITOR+        |
+| Update Sprint         | /api/sprints/{id}             | PUT     | EDITOR+        |
+| Delete Sprint         | /api/sprints/{id}             | DELETE  | EDITOR+        |
+
+---
+
+ 🔹 6. Status Management
+
+Component: status-manager  
+Service: StatusService  
+Backend: StatusController
+
+| Action        | API Endpoint         | Method  | Role Required |
+|---------------|----------------------|---------|----------------|
+| Get All Status| /api/status        | GET     | Any          |
+| Add Status    | /api/status        | POST    | EDITOR+        |
+| Update Status | /api/status/{id}   | PUT     | EDITOR+        |
+| Delete Status | /api/status/{id}   | DELETE  | EDITOR+        |
+
+---
+
+ 🔹 7. Velocity Management & Chart Plotting
+
+Component: velocity-plot  
+Service: VelocityService  
+Backend: VelocityController
+
+| Action                 | API Endpoint                  | Method | Role Required |
+|------------------------|-------------------------------|--------|----------------|
+| Get Velocity by Project| /api/velocity/project/{id}  | GET    | Any          |
+| Create Velocity Entry  | /api/velocity               | POST   | EDITOR+        |
+| Delete Velocity Entry  | /api/velocity/{id}          | DELETE | EDITOR+        |
+
+---
+
+ 🔹 8. Scrum Area Management
+
+Component: velocity-section  
+Service: ScrumAreaService  
+Backend: ScrumAreaController
+
+| Action           | API Endpoint          | Method | Role Required |
+|------------------|-----------------------|--------|----------------|
+| Get All ScrumAreas | /api/scrumarea    | GET    | Any          |
+| Add ScrumArea     | /api/scrumarea     | POST   | EDITOR+        |
+| Delete ScrumArea  | /api/scrumarea/{id}| DELETE | EDITOR+        |
+
+---
+
+ Common Behavior
+
+- JWT Interceptor adds tokens automatically  
+- Role-based UI disables/hides actions dynamically  
+- Backend @PreAuthorize ensures secure access control
+
+
+ 1.3 Security Architecture
+
+1. Login → AuthController returns JWT Token
+2. Interceptor → adds Authorization: Bearer <token> to headers
+3. JwtAuthFilter → validates token & injects user context
+4. SecurityConfig → sets route-level access based on roles
+5. @PreAuthorize → enforces access inside controllers/services
+6. Frontend → shows/hides buttons using role-check logic
+
+---
+
+ 1.4 Cross-Origin/API Gateway Readiness
+
+- @CrossOrigin(origins = "*") on backend controllers
+- If deployed on cloud:
+  - CORS needs fine-tuning for frontend domain
+  - API Gateway (like Azure or NGINX) can route requests to backend securely
+- Add Swagger UI for live API testing with token support
+
+---
+
+ 1.5 Deployment Architecture
+
+
+    +---------------------+
+    |     Client Browser  |
+    +---------------------+
+             |
+    +---------------------+
+    |  Angular Frontend   | (e.g., Vercel/S3/Nginx)
+    +---------------------+
+             |
+    +---------------------+
+    | Spring Boot Backend | (e.g., EC2 / Azure App / Heroku)
+    +---------------------+
+             |
+    +---------------------+
+    |     H2/Cloud DB     | (CloudSQL/Aurora/PostgreSQL)
+    +---------------------+
+
+
+---
+
+  2. Backend Low-Level Design
+
+ Entity Relationship (ER) Mapping – DEMORI System
+
+---
+
+ Key Entities and Relationships
+
+ 1. User
+- Fields: id, username, email, password, role
+- Relationships:
+  - Many-to-One with Role
+  - One-to-One with UserRequest
+
+---
+
+ 2. UserRequest
+- Fields: id, fullName, email, brid, status, requestedRole
+- Relationships:
+  - One-to-One with User
+
+---
+
+ 3. Role
+- Fields: id, roleName, canApproveUsers, canWrite, canDelete
+- Relationships:
+  - One-to-Many with User
+
+---
+
+ 4. Area
+- Fields: id, name, leadName, leadEmail
+- Relationships:
+  - One-to-Many with Project
+
+---
+
+ 5. Project
+- Fields: id, projectName, status, areaId
+- Relationships:
+  - Many-to-One with Area
+  - One-to-Many with Sprint
+
+---
+
+ 6. Sprint
+- Fields: id, sprintName, sprintStartDate, sprintEndDate, sprintJira, sprintDescription, project, status, assignedTo
+- Relationships:
+  - Many-to-One with Project
+  - Many-to-One with Status
+
+---
+
+ 7. Status
+- Fields: id, statusName, progressPercent
+- Relationships:
+  - One-to-Many with Sprint
+
+---
+
+ 8. ScrumArea
+- Fields: id, name
+- Relationships:
+  - One-to-Many with Velocity
+
+---
+
+ 9. Velocity
+- Fields: id, scrumArea, sprint, velocityValue
+- Relationships:
+  - Many-to-One with ScrumArea
+  - Many-to-One with Sprint
+
+---
+
+ Relationship Summary
+
+text
+User —— (1:1) —— UserRequest
+User —— (M:1) —— Role
+
+Area —— (1:M) —— Project
+Project —— (1:M) —— Sprint
+Sprint —— (M:1) —— Status
+
+ScrumArea —— (1:M) —— Velocity
+Velocity —— (M:1) —— Sprint
+
+
+*All IDs are primary keys with auto-generation (IDENTITY strategy). Relationships managed using JPA annotations.*
+
+
+ 2.2 Service Contracts
+
+  Full Service Layer Contracts – DEMORI System
+
+---
+
+ AuthService
+
+Handles login/signup and JWT generation
+
+| Method        | Input                                  | Output       | Description                                  |
+|---------------|-----------------------------------------|--------------|----------------------------------------------|
+| login()     | LoginRequest(username, password)      | JWT token  | Authenticates user and returns signed token  |
+| signup()    | UserRequestDTO                        | Success msg| Registers a new signup request               |
+
+---
+
+ UserService
+
+Manages user data, approval, roles
+
+| Method                      | Input                    | Output              | Description                        |
+|-----------------------------|--------------------------|---------------------|------------------------------------|
+| getApprovedUsers()        | —                        | List<User>        | Fetch approved users               |
+| getPendingUsers()         | —                        | List<UserRequest> | Fetch unapproved signup requests   |
+| approveUser(id)           | Long                   | String            | Approve and promote a user         |
+| rejectUser(id)            | Long                   | String            | Reject and delete user request     |
+| changeUserRole(id, role)  | Long, String           | String            | Update a user’s role (EDITOR, etc) |
+| deleteUserById(id)        | Long                   | String            | Deactivates or removes a user      |
+
+---
+
+ RoleService
+
+Handles role creation and retrieval
+
+| Method               | Input     | Output        | Description                            |
+|----------------------|-----------|---------------|----------------------------------------|
+| getRoleByName()    | String  | Role        | Lookup role by name (VIEWER, etc)      |
+| getAllRoles()      | —         | List<Role>  | Returns all roles                      |
+| initializeRoles()  | —         | void        | Seeds default roles if DB is empty     |
+| findByName()       | String  | Optional<Role> | Optional lookup                        |
+
+---
+
+ 🌐 AreaService
+
+Manages areas and their leads
+
+| Method              | Input          | Output        | Description                          |
+|---------------------|----------------|---------------|--------------------------------------|
+| getAllAreas()     | —              | List<Area>  | Fetch all areas                      |
+| addArea(area)     | Area         | Area        | Create a new area                    |
+| updateArea(id, a) | Long, Area   | Area        | Modify an existing area              |
+| deleteArea(id)    | Long         | String      | Delete area by ID                    |
+
+---
+
+ ProjectService
+
+Manages projects within areas
+
+| Method                    | Input             | Output          | Description                        |
+|---------------------------|-------------------|-----------------|------------------------------------|
+| getAllProjects()        | —                 | List<Project> | Fetch all projects                 |
+| getProjectsByArea(id)   | Long            | List<Project> | List of projects by area           |
+| addProject(project)     | Project         | Project       | Create a new project               |
+| updateProject(id, proj) | Long, Project   | Project       | Update project data                |
+| deleteProject(id)       | Long            | String        | Delete a project                   |
+
+---
+
+ SprintService
+
+Handles sprints for projects
+
+| Method                       | Input                | Output         | Description                          |
+|------------------------------|----------------------|----------------|--------------------------------------|
+| getAllSprints()            | —                    | List<Sprint> | All sprints in system                |
+| getSprintsByProject(id)    | Long               | List<Sprint> | Sprints filtered by project          |
+| addSprint(sprint)          | Sprint             | Sprint       | Add a sprint                         |
+| updateSprint(id, sprint)   | Long, Sprint       | Sprint       | Update sprint info                   |
+| deleteSprint(id)           | Long               | String       | Remove sprint by ID                  |
+
+---
+
+  StatusService
+
+Status options used for sprints
+
+| Method                  | Input             | Output         | Description                         |
+|-------------------------|-------------------|----------------|-------------------------------------|
+| getAllStatuses()      | —                 | List<Status> | All available status definitions    |
+| addStatus(status)     | Status          | Status       | Add new status                      |
+| updateStatus(id, s)   | Long, Status    | Status       | Modify an existing status           |
+| deleteStatus(id)      | Long            | String       | Remove status by ID                 |
+
+---
+
+  VelocityService
+
+Scrum-wise velocity tracking
+
+| Method                          | Input               | Output            | Description                                 |
+|----------------------------------|----------------------|-------------------|---------------------------------------------|
+| getAllVelocities()            | —                    | List<Velocity>  | Returns all velocity entries                |
+| getVelocityByProject(id)      | Long               | List<Velocity>  | Velocity entries for a given project        |
+| addVelocity(velocity)         | Velocity           | Velocity        | Create a new velocity record                |
+| deleteVelocity(id)            | Long               | String          | Remove a velocity record                    |
+
+---
+
+  ScrumAreaService
+
+Manages ScrumArea master data
+
+| Method                    | Input             | Output             | Description                      |
+|---------------------------|-------------------|--------------------|----------------------------------|
+| getAllScrumAreas()      | —                 | List<ScrumArea>  | List all scrum teams             |
+| addScrumArea(scrumArea) | ScrumArea       | ScrumArea        | Add a scrum area                 |
+| deleteScrumArea(id)     | Long            | String           | Remove scrum area                |
+
+---
+
+  UserRequestService
+
+Manages signup requests before approval
+
+| Method                    | Input           | Output               | Description                         |
+|---------------------------|-----------------|----------------------|-------------------------------------|
+| getAllRequests()        | —               | List<UserRequest>  | View all pending requests           |
+| approveRequest(id)      | Long          | String             | Approve request & create user       |
+| rejectRequest(id)       | Long          | String             | Reject request                      |
+| saveRequest(request)    | UserRequest   | UserRequest        | Save a new signup request           |
+
+
+
+
+
+
+ 2.3 Controller Highlights
+
+java
+@GetMapping("/api/projects/area/{id}")
+@GetMapping("/api/sprints/project/{id}")
+@PostMapping("/api/velocity")
+@PreAuthorize("hasAuthority('EDITOR')")
+
+
+---
+
+ 2.4 Repository Pattern
+
+- ProjectRepository extends JpaRepository<Project, Long>
+- findByAreaId(Long areaId)
+- SprintRepository.findByProjectId(projectId)
+- VelocityRepository.findByScrumAreaIdAndSprintId
+
+---
+
+ 2.5 Exception Handling
+
+- Global Handler via @ControllerAdvice
+- DTO validation via @Valid, @NotNull, @Size
+- Throws ResponseStatusException with messages
+
+---
+ 3. Frontend Deep Dive
+
+ 3.1 Components
+
+- LoginSignupComponent → reactive form, password check
+- ProjectViewComponent → tabs per area, lead info
+- VelocityPlotComponent → Chart.js line graph per scrum area
+- ProjectWiseInsightComponent → add sprint, edit, delete
+- AdminDashboardComponent → role updates, approval
+
+---
+
+ 3.2 API Integration
+
+ AuthService
+ts
+login(payload: { email, password }): Observable<token>
+signup(payload): Observable<any>
+
+
+ VelocityService
+ts
+getVelocities(projectId: number): Observable<{scrumArea, velocity}[]>
+
+
+---
+
+ 3.3 Role-based UI Control
+
+- Signal userRole = signal<string>()
+- Template:
+html
+<button *ngIf="userRole() === 'SUPER_USER'">Delete</button>
+
+- Disabled state using [disabled]="userRole() !== 'EDITOR'"
+
+---
+
+ 3.4 Chart Plot Config (Chart.js)
+
+- Data via API: [{sprintName, value}]
+- Config:
+ts
+type: 'line',
+options: {
+  scales: { y: { beginAtZero: true, max: 100 } }
+}
+
+
+---
+
+ 3.5 Signals and State
+
+- Angular signals used for:
+  - pendingRequests = signal<User[]>();
+  - Updating list after approval
+- Reduces need for RxJS Subjects
+
+---
+
